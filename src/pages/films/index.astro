@@ -1,0 +1,109 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import YouTubeFacade from '../../components/YouTubeFacade.astro';
+
+const films = (await getCollection('films')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout title="필모" description="Oozan의 영상 필모그래피.">
+	<section class="section container">
+		<div class="page-head">
+			<p class="eyebrow">Films</p>
+			<h1 class="display-1">필모</h1>
+			<p class="lede">기획하고 촬영·편집한 영상 작업들입니다.</p>
+		</div>
+
+		<div class="film-list">
+			{
+				films.map((film, i) => (
+					<article class="film-entry" id={film.id}>
+						<div class="film-entry__media">
+							<YouTubeFacade youtubeId={film.data.youtubeId} cover={film.data.cover} title={film.data.title} />
+						</div>
+						<div class="film-entry__body">
+							<span class="film-entry__index">{String(i + 1).padStart(2, '0')}</span>
+							<h2 class="film-entry__title">{film.data.title}</h2>
+							{(film.data.date || film.data.role) && (
+								<div class="meta-row film-entry__meta">
+									{film.data.date && (
+										<span>
+											<b>Date</b>
+											{film.data.date}
+										</span>
+									)}
+									{film.data.role && (
+										<span>
+											<b>Role</b>
+											{film.data.role}
+										</span>
+									)}
+								</div>
+							)}
+							<p class="film-entry__desc">{film.data.description}</p>
+						</div>
+					</article>
+				))
+			}
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.page-head {
+		max-width: 60ch;
+		margin-bottom: clamp(3rem, 7vw, 5rem);
+	}
+
+	.page-head .display-1 {
+		margin-top: 0.75rem;
+	}
+
+	.page-head .lede {
+		margin-top: 1.25rem;
+	}
+
+	.film-list {
+		display: flex;
+		flex-direction: column;
+		gap: clamp(3.5rem, 8vw, 6rem);
+	}
+
+	.film-entry {
+		display: grid;
+		grid-template-columns: 1.4fr 1fr;
+		gap: clamp(1.5rem, 4vw, 3rem);
+		align-items: start;
+	}
+
+	.film-entry__index {
+		font-size: 0.85rem;
+		font-weight: 700;
+		color: var(--color-accent);
+	}
+
+	.film-entry__title {
+		margin-top: 0.5rem;
+		font-size: clamp(1.6rem, 3vw, 2.25rem);
+		font-weight: 800;
+		letter-spacing: -0.015em;
+	}
+
+	.film-entry__meta {
+		margin-top: 1.25rem;
+	}
+
+	.film-entry__desc {
+		margin-top: 1.25rem;
+		color: var(--color-text-dim);
+		line-height: 1.7;
+		max-width: 48ch;
+		white-space: pre-line;
+	}
+
+	@media (max-width: 900px) {
+		.film-entry {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

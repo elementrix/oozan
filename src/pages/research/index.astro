@@ -1,0 +1,141 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import GlassButton from '../../components/GlassButton.astro';
+import { withBase } from '../../lib/url';
+
+const papers = (await getCollection('research')).sort((a, b) => a.data.order - b.data.order);
+---
+
+<BaseLayout title="연구" description="Oozan의 연구 논문.">
+	<section class="section container">
+		<div class="page-head">
+			<p class="eyebrow">Research</p>
+			<h1 class="display-1">연구</h1>
+			<p class="lede">아스펙트 기반 감정 분석을 중심으로 진행한 연구입니다.</p>
+		</div>
+
+		<div class="paper-list">
+			{
+				papers.map((paper) => {
+					const pdfHref = withBase(paper.data.pdf);
+					return (
+						<article class="paper">
+							<h2 class="paper__title">{paper.data.title}</h2>
+							<div class="meta-row paper__meta">
+								<span>
+									<b>Authors</b>
+									{paper.data.authors}
+								</span>
+								<span>
+									<b>Published in</b>
+									{paper.data.venue}
+								</span>
+								<span>
+									<b>Date</b>
+									{paper.data.date}
+								</span>
+							</div>
+							<p class="paper__abstract-label">Abstract</p>
+							<p class="paper__abstract">{paper.data.abstract}</p>
+							<div class="paper__actions">
+								<GlassButton href={pdfHref} target="_blank" rel="noopener noreferrer">
+									PDF 보기
+								</GlassButton>
+								{paper.data.doi && (
+									<GlassButton href={paper.data.doi} target="_blank" rel="noopener noreferrer">
+										DOI ↗
+									</GlassButton>
+								)}
+							</div>
+							<div class="paper__viewer">
+								<iframe src={pdfHref} title={`${paper.data.title} PDF`} loading="lazy" />
+							</div>
+						</article>
+					);
+				})
+			}
+		</div>
+	</section>
+</BaseLayout>
+
+<style>
+	.page-head {
+		max-width: 60ch;
+	}
+
+	.page-head .display-1 {
+		margin-top: 0.75rem;
+	}
+
+	.page-head .lede {
+		margin-top: 1.25rem;
+	}
+
+	.paper-list {
+		margin-top: clamp(3rem, 7vw, 5rem);
+		display: flex;
+		flex-direction: column;
+		gap: clamp(3rem, 7vw, 5rem);
+	}
+
+	.paper {
+		border-top: 1px solid var(--color-border);
+		padding-top: clamp(2rem, 5vw, 3rem);
+	}
+
+	.paper__title {
+		max-width: 42ch;
+		font-size: clamp(1.5rem, 3vw, 2.1rem);
+		font-weight: 800;
+		letter-spacing: -0.015em;
+		line-height: 1.2;
+	}
+
+	.paper__meta {
+		margin-top: 1.5rem;
+	}
+
+	.paper__abstract-label {
+		margin-top: 2rem;
+		font-size: 0.75rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: var(--color-text-faint);
+	}
+
+	.paper__abstract {
+		margin-top: 0.75rem;
+		max-width: 74ch;
+		color: var(--color-text-dim);
+		line-height: 1.75;
+	}
+
+	.paper__actions {
+		margin-top: 2rem;
+		display: flex;
+		gap: 1rem;
+		flex-wrap: wrap;
+	}
+
+	.paper__viewer {
+		margin-top: 2.5rem;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+		border: 1px solid var(--color-border);
+		background: var(--color-bg-card);
+	}
+
+	.paper__viewer iframe {
+		width: 100%;
+		height: 80vh;
+		border: 0;
+		display: block;
+	}
+
+	@media (max-width: 640px) {
+		.paper__viewer {
+			display: none;
+		}
+	}
+</style>

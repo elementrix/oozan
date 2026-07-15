@@ -1,0 +1,159 @@
+---
+import { withBase } from '../lib/url';
+
+const navItems = [
+	{ href: withBase('/films/'), label: '필모' },
+	{ href: withBase('/snap/'), label: '스냅' },
+	{ href: withBase('/research/'), label: '연구' },
+	{ href: withBase('/composition/'), label: '작곡' },
+];
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+	<div class="site-header__inner container">
+		<a href={withBase('/')} class="site-header__brand">OOZAN</a>
+
+		<nav class="site-header__nav" aria-label="주요 메뉴">
+			<ul>
+				{
+					navItems.map((item) => (
+						<li>
+							<a href={item.href} aria-current={currentPath.startsWith(item.href) ? 'page' : undefined}>
+								{item.label}
+							</a>
+						</li>
+					))
+				}
+			</ul>
+		</nav>
+
+		<button class="site-header__toggle" id="nav-toggle" aria-label="메뉴 열기" aria-expanded="false">
+			<span></span>
+			<span></span>
+		</button>
+	</div>
+
+	<nav class="site-header__mobile-nav" id="mobile-nav" aria-label="모바일 메뉴">
+		<ul>
+			{
+				navItems.map((item) => (
+					<li>
+						<a href={item.href}>{item.label}</a>
+					</li>
+				))
+			}
+		</ul>
+	</nav>
+</header>
+
+<style>
+	.site-header {
+		position: sticky;
+		top: 0;
+		z-index: 50;
+		border-bottom: 1px solid var(--color-border);
+		background: rgba(10, 10, 11, 0.55);
+		backdrop-filter: blur(20px) saturate(160%);
+		-webkit-backdrop-filter: blur(20px) saturate(160%);
+	}
+
+	.site-header__inner {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		height: 4.5rem;
+	}
+
+	.site-header__brand {
+		font-size: 1.3rem;
+		font-weight: 800;
+		letter-spacing: 0.04em;
+	}
+
+	.site-header__nav ul {
+		display: flex;
+		gap: clamp(1.25rem, 2.5vw, 2.5rem);
+	}
+
+	.site-header__nav a {
+		font-size: 0.92rem;
+		font-weight: 600;
+		color: var(--color-text-dim);
+		letter-spacing: 0.02em;
+		transition: color 0.2s ease;
+	}
+
+	.site-header__nav a:hover,
+	.site-header__nav a[aria-current='page'] {
+		color: var(--color-text);
+	}
+
+	.site-header__toggle {
+		display: none;
+		flex-direction: column;
+		justify-content: center;
+		gap: 5px;
+		width: 2.25rem;
+		height: 2.25rem;
+		background: transparent;
+		border: 0;
+	}
+
+	.site-header__toggle span {
+		display: block;
+		height: 1.5px;
+		width: 100%;
+		background: var(--color-text);
+	}
+
+	.site-header__mobile-nav {
+		display: none;
+	}
+
+	@media (max-width: 720px) {
+		.site-header__nav {
+			display: none;
+		}
+
+		.site-header__toggle {
+			display: flex;
+		}
+
+		.site-header__mobile-nav {
+			display: block;
+			max-height: 0;
+			overflow: hidden;
+			border-top: 1px solid transparent;
+			transition: max-height 0.3s ease;
+		}
+
+		.site-header__mobile-nav.is-open {
+			max-height: 20rem;
+			border-top-color: var(--color-border);
+		}
+
+		.site-header__mobile-nav ul {
+			display: flex;
+			flex-direction: column;
+			padding: 1rem var(--gutter) 1.5rem;
+			gap: 1rem;
+		}
+
+		.site-header__mobile-nav a {
+			font-size: 1.05rem;
+			font-weight: 600;
+		}
+	}
+</style>
+
+<script>
+	const toggle = document.getElementById('nav-toggle');
+	const mobileNav = document.getElementById('mobile-nav');
+
+	toggle?.addEventListener('click', () => {
+		const isOpen = mobileNav?.classList.toggle('is-open');
+		toggle.setAttribute('aria-expanded', String(Boolean(isOpen)));
+	});
+</script>
