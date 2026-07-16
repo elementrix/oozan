@@ -1,6 +1,7 @@
 ---
 title: "Graduation, you are the present | 브랜드 영상 with AI"
 description: "[한 줄 소개를 입력하세요]"
+role: "AI · 연출 · 편집 · 믹싱"
 youtubeId: "M-RRzfX-oEs"
 cover: "../../assets/films/graduation-explosion-02.jpg"
 order: 2

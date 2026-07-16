@@ -5,13 +5,14 @@ import type { ImageMetadata } from 'astro';
 interface Props {
 	title: string;
 	description?: string;
+	role?: string;
 	youtubeId?: string;
 	cover: ImageMetadata;
 	index: number;
 	total: number;
 }
 
-const { title, description, youtubeId, cover, index, total } = Astro.props;
+const { title, description, role, youtubeId, cover, index, total } = Astro.props;
 const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 ---
 
@@ -31,15 +32,46 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 			sizes="(max-width: 900px) 100vw, 60vw"
 			loading="lazy"
 		/>
+		{!isPlaceholder && <div class="chapter__scrollcatch" data-scrollcatch aria-hidden="true" />}
 		<div class="chapter__scrim" aria-hidden="true"></div>
 	</div>
 	{isPlaceholder && <span class="chapter__badge">영상 업로드 예정</span>}
+	{
+		!isPlaceholder && (
+			<button class="chapter__mute" type="button" data-mute-toggle data-muted="true" aria-label="음소거 해제">
+				<svg class="chapter__mute-icon chapter__mute-icon--off" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+					<path d="M4 9v6h4l5 5V4L8 9H4Z" />
+					<path d="M16.5 12 19 9.5m0 5L16.5 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" />
+				</svg>
+				<svg class="chapter__mute-icon chapter__mute-icon--on" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+					<path d="M4 9v6h4l5 5V4L8 9H4Z" />
+					<path
+						d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"
+						stroke="currentColor"
+						stroke-width="1.6"
+						stroke-linecap="round"
+						fill="none"
+					/>
+				</svg>
+			</button>
+		)
+	}
 	<div class="chapter__body">
-		<p class="chapter__index">
-			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
-		</p>
-		<h4 class="chapter__title">{title}</h4>
-		{description && <p class="chapter__desc">{description}</p>}
+		<div class="chapter__main">
+			<p class="chapter__index">
+				{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+			</p>
+			<h4 class="chapter__title">{title}</h4>
+			{description && <p class="chapter__desc">{description}</p>}
+		</div>
+		{
+			role && (
+				<div class="chapter__meta">
+					<p class="chapter__meta-label">Participated</p>
+					<p class="chapter__meta-value">{role}</p>
+				</div>
+			)
+		}
 	</div>
 </section>
 
@@ -66,22 +98,25 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		border: 0;
 	}
 
+	.chapter__scrollcatch {
+		position: absolute;
+		inset: 0;
+		z-index: 3;
+	}
+
 	.chapter__scrim {
 		position: absolute;
 		inset: 0;
+		z-index: 4;
 		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.25) 100%);
 		pointer-events: none;
-	}
-
-	.chapter[data-playing='true'] .chapter__scrim {
-		opacity: 0;
-		transition: opacity 0.3s ease;
 	}
 
 	.chapter__badge {
 		position: absolute;
 		top: 1.5rem;
 		left: 1.5rem;
+		z-index: 5;
 		padding: 0.55rem 1rem;
 		font-size: 0.75rem;
 		letter-spacing: 0.04em;
@@ -92,22 +127,53 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		color: #fff;
 	}
 
+	.chapter__mute {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+		z-index: 6;
+		width: 2.5rem;
+		height: 2.5rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.14);
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
+		color: #fff;
+		cursor: pointer;
+	}
+
+	.chapter__mute-icon--on {
+		display: none;
+	}
+
+	.chapter__mute[data-muted='false'] .chapter__mute-icon--off {
+		display: none;
+	}
+
+	.chapter__mute[data-muted='false'] .chapter__mute-icon--on {
+		display: block;
+	}
+
 	.chapter__body {
 		position: absolute;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		max-width: 640px;
+		z-index: 5;
+		display: flex;
+		justify-content: space-between;
+		align-items: flex-end;
+		gap: clamp(1.5rem, 4vw, 3rem);
 		padding: clamp(1.5rem, 3vw, 3rem);
 		pointer-events: none;
 	}
 
-	.chapter[data-playing='true'] .chapter__body {
-		opacity: 0;
-		transform: translateY(12px);
-		transition:
-			opacity 0.25s ease,
-			transform 0.25s ease;
+	.chapter__main {
+		max-width: 560px;
 	}
 
 	.chapter__index {
@@ -130,5 +196,37 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		font-size: 0.9rem;
 		line-height: 1.6;
 		color: rgba(255, 255, 255, 0.85);
+	}
+
+	.chapter__meta {
+		flex-shrink: 0;
+		text-align: right;
+	}
+
+	.chapter__meta-label {
+		font-size: 0.68rem;
+		text-transform: uppercase;
+		letter-spacing: 0.14em;
+		color: rgba(255, 255, 255, 0.55);
+	}
+
+	.chapter__meta-value {
+		margin-top: 0.4rem;
+		max-width: 220px;
+		font-size: 0.85rem;
+		line-height: 1.5;
+		color: rgba(255, 255, 255, 0.92);
+	}
+
+	@media (max-width: 640px) {
+		.chapter__body {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.75rem;
+		}
+
+		.chapter__meta {
+			text-align: left;
+		}
 	}
 </style>

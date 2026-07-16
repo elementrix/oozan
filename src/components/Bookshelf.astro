@@ -7,7 +7,7 @@ import ResearchChapter from './shelf/ResearchChapter.astro';
 import AudioChapter from './shelf/AudioChapter.astro';
 
 export type Chapter =
-	| { type: 'film'; title: string; description?: string; youtubeId?: string; cover: ImageMetadata }
+	| { type: 'film'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata }
 	| { type: 'person'; name: string; images: ImageMetadata[] }
 	| {
 			type: 'research';
@@ -20,7 +20,7 @@ export type Chapter =
 			doi?: string;
 	  }
 	| { type: 'audio'; title: string; subtitle?: string; description?: string; src: string }
-	| { type: 'video-track'; title: string; description?: string; youtubeId?: string; cover: ImageMetadata };
+	| { type: 'video-track'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata };
 
 interface Panel {
 	key: string;
@@ -81,6 +81,7 @@ const { panels } = Astro.props;
 									<VideoChapter
 										title={ch.title}
 										description={ch.description}
+										role={ch.role}
 										youtubeId={ch.youtubeId}
 										cover={ch.cover}
 										index={index}
@@ -310,7 +311,9 @@ const { panels } = Astro.props;
 		if (!media) return;
 		const iframe = document.createElement('iframe');
 		iframe.className = 'chapter__iframe';
-		iframe.src = `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${youtubeId}&rel=0`;
+		// controls=0 + enablejsapi=1: no native YouTube chrome, so our own
+		// mute button can drive playback state via postMessage commands
+		iframe.src = `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${youtubeId}&rel=0&modestbranding=1&enablejsapi=1`;
 		iframe.title = el.dataset.title ?? 'video';
 		iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
 		media.appendChild(iframe);
@@ -321,7 +324,33 @@ const { panels } = Astro.props;
 		if (el.dataset.playing !== 'true') return;
 		el.querySelector('.chapter__iframe')?.remove();
 		el.dataset.playing = 'false';
+		const muteBtn = el.querySelector<HTMLButtonElement>('[data-mute-toggle]');
+		if (muteBtn) {
+			muteBtn.dataset.muted = 'true';
+			muteBtn.setAttribute('aria-label', '음소거 해제');
+		}
 	}
+
+	// videos autoplay controls-free, so a click on the video area shouldn't
+	// need to reach the iframe for anything — the overlay just needs to
+	// exist so wheel/touch over the video hits our own listeners instead of
+	// being swallowed by the cross-origin YouTube frame
+	function initMuteToggle(chapter: HTMLElement) {
+		const btn = chapter.querySelector<HTMLButtonElement>('[data-mute-toggle]');
+		if (!btn) return;
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			const iframe = chapter.querySelector<HTMLIFrameElement>('.chapter__iframe');
+			if (!iframe?.contentWindow) return;
+			const wasMuted = btn.dataset.muted !== 'false';
+			const command = wasMuted ? 'unMute' : 'mute';
+			iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: command, args: [] }), '*');
+			btn.dataset.muted = String(!wasMuted);
+			btn.setAttribute('aria-label', wasMuted ? '음소거' : '음소거 해제');
+		});
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-video-chapter]').forEach(initMuteToggle);
 
 	// drives paging within one panel's chapter stack: wheel/touch nudge -> snap to next/prev chapter
 	function initChapterPaging(panel: HTMLElement) {

@@ -1,6 +1,7 @@
 ---
 title: "I hear a symphony | in PARIS | 연인 여행 | MV"
 description: "[한 줄 소개를 입력하세요]"
+role: "연출 · 촬영 · 편집"
 youtubeId: "Un7QbyR_fTs"
 cover: "../../assets/films/premium-project.jpg"
 order: 1

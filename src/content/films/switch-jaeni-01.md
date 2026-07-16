@@ -1,6 +1,7 @@
 ---
 title: "Switch | 컨셉영상"
 description: "[한 줄 소개를 입력하세요]"
+role: "연출 · 촬영 · 편집 · 믹싱"
 youtubeId: "7WZtzHR1qQo"
 cover: "../../assets/films/switch-jaeni-01.jpg"
 order: 3
