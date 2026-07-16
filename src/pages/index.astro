@@ -64,28 +64,10 @@ const panels = [
 			type: 'person' as const,
 			name: p.data.name,
 			images: galleriesBySlug.get(p.data.slug) ?? [],
-			href: withBase(`/snap/#${p.data.slug}`),
 		})),
 	},
 	{
 		key: '03',
-		title: '연구',
-		titleEn: 'RESEARCH',
-		meta: `${research.length} PAPER`,
-		color: 'var(--color-spine-3)',
-		chapters: research.map((r) => ({
-			type: 'research' as const,
-			title: r.data.title,
-			authors: r.data.authors,
-			venue: r.data.venue,
-			date: r.data.date,
-			abstract: r.data.abstract,
-			pdf: withBase(r.data.pdf),
-			doi: r.data.doi,
-		})),
-	},
-	{
-		key: '04',
 		title: '작곡',
 		titleEn: 'COMPOSITION',
 		meta: `${compositions.length} TRACKS`,
@@ -109,9 +91,26 @@ const panels = [
 					},
 		),
 	},
+	{
+		key: '04',
+		title: '연구',
+		titleEn: 'RESEARCH',
+		meta: `${research.length} PAPER`,
+		color: 'var(--color-spine-3)',
+		chapters: research.map((r) => ({
+			type: 'research' as const,
+			title: r.data.title,
+			authors: r.data.authors,
+			venue: r.data.venue,
+			date: r.data.date,
+			abstract: r.data.abstract,
+			pdf: withBase(r.data.pdf),
+			doi: r.data.doi,
+		})),
+	},
 ];
 ---
 
-<BaseLayout title="Oozan — Portfolio" hideFooter>
+<BaseLayout title="Oozan — Portfolio">
 	<Bookshelf panels={panels} />
 </BaseLayout>

@@ -5,12 +5,11 @@ import type { ImageMetadata } from 'astro';
 interface Props {
 	name: string;
 	images: ImageMetadata[];
-	href: string;
 	index: number;
 	total: number;
 }
 
-const { name, images, href, index, total } = Astro.props;
+const { name, images, index, total } = Astro.props;
 // pad with clones of the last/first photo so the peek carousel can wrap seamlessly
 const padded = images.length > 1 ? [images[images.length - 1], ...images, images[0]] : images;
 ---
@@ -71,9 +70,6 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
 		</p>
 		<h4 class="chapter__title">{name}</h4>
-		<a class="chapter__link" href={href}>
-			전체 갤러리 보기 →
-		</a>
 	</div>
 </section>
 
@@ -96,22 +92,20 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		top: 0;
 		height: 100%;
 		aspect-ratio: 3 / 4;
+		border-right: 1px solid rgba(255, 255, 255, 0.55);
 		transition: left 0.45s cubic-bezier(0.65, 0, 0.35, 1);
-		opacity: 0.5;
-	}
-
-	.chapter__slide.is-active {
-		opacity: 1;
 	}
 
 	.chapter__slide :global(.chapter__photo) {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
+		filter: brightness(0.5);
 	}
 
 	.chapter__slide.is-active :global(.chapter__photo) {
 		object-fit: contain;
+		filter: none;
 	}
 
 	.chapter__hnav {
@@ -200,26 +194,10 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		letter-spacing: -0.02em;
 		color: #fff;
 	}
-
-	.chapter__link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4em;
-		margin-top: 1rem;
-		font-weight: 700;
-		font-size: 0.85rem;
-		color: #fff;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-		padding-bottom: 0.15rem;
-	}
-
-	.chapter__link:hover {
-		border-color: #fff;
-	}
 </style>
 
 <script>
-	const GAP_PX = 20;
+	const GAP_PX = 0;
 	const TRANSITION_MS = 460;
 
 	function initHGallery(gallery: HTMLElement) {

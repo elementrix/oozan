@@ -8,7 +8,7 @@ import AudioChapter from './shelf/AudioChapter.astro';
 
 export type Chapter =
 	| { type: 'film'; title: string; description?: string; youtubeId?: string; cover: ImageMetadata }
-	| { type: 'person'; name: string; images: ImageMetadata[]; href: string }
+	| { type: 'person'; name: string; images: ImageMetadata[] }
 	| {
 			type: 'research';
 			title: string;
@@ -37,7 +37,6 @@ interface Props {
 }
 
 const { panels } = Astro.props;
-const total = String(panels.length).padStart(2, '0');
 ---
 
 <div class="shelf-wrap">
@@ -90,9 +89,7 @@ const total = String(panels.length).padStart(2, '0');
 								);
 							}
 							if (ch.type === 'person') {
-								return (
-									<PersonChapter name={ch.name} images={ch.images} href={ch.href} index={index} total={chTotal} />
-								);
+								return <PersonChapter name={ch.name} images={ch.images} index={index} total={chTotal} />;
 							}
 							if (ch.type === 'research') {
 								return (
@@ -138,16 +135,6 @@ const total = String(panels.length).padStart(2, '0');
 				</div>
 			))
 		}
-	</div>
-
-	<div class="shelf__controls">
-		<button class="shelf__nav" type="button" data-shelf-prev aria-label="이전">
-			←
-		</button>
-		<span class="shelf__count"><span data-shelf-current>01</span> / {total}</span>
-		<button class="shelf__nav" type="button" data-shelf-next aria-label="다음">
-			→
-		</button>
 	</div>
 </div>
 
@@ -294,34 +281,6 @@ const total = String(panels.length).padStart(2, '0');
 		background: #fff;
 	}
 
-	.shelf__controls {
-		flex: 0 0 auto;
-		display: flex;
-		align-items: center;
-		gap: 1.5rem;
-		padding: 0.75rem var(--gutter);
-		font-size: 0.85rem;
-		color: var(--color-text-dim);
-	}
-
-	.shelf__nav {
-		background: none;
-		border: 1px solid var(--color-border);
-		padding: 0.4rem 0.9rem;
-		color: var(--color-text);
-		font-size: 0.95rem;
-		font-family: inherit;
-	}
-
-	.shelf__nav:hover {
-		border-color: var(--color-border-strong);
-	}
-
-	.shelf__count {
-		font-variant-numeric: tabular-nums;
-		letter-spacing: 0.04em;
-	}
-
 	@media (max-width: 720px) {
 		.shelf__panel {
 			flex-basis: 52px;
@@ -440,10 +399,6 @@ const total = String(panels.length).padStart(2, '0');
 
 	function initShelf(shelf: HTMLElement) {
 		const panels = Array.from(shelf.querySelectorAll<HTMLElement>('[data-panel]'));
-		const wrapper = shelf.closest<HTMLElement>('.shelf-wrap');
-		const currentLabel = wrapper?.querySelector('[data-shelf-current]');
-		const prevBtn = wrapper?.querySelector('[data-shelf-prev]');
-		const nextBtn = wrapper?.querySelector('[data-shelf-next]');
 		let active = panels.findIndex((p) => p.getAttribute('aria-expanded') === 'true');
 		if (active < 0) active = 0;
 
@@ -451,7 +406,6 @@ const total = String(panels.length).padStart(2, '0');
 
 		function render() {
 			panels.forEach((p, i) => p.setAttribute('aria-expanded', String(i === active)));
-			if (currentLabel) currentLabel.textContent = String(active + 1).padStart(2, '0');
 		}
 
 		function activate(i: number) {
@@ -475,9 +429,6 @@ const total = String(panels.length).padStart(2, '0');
 				}
 			});
 		});
-
-		prevBtn?.addEventListener('click', () => activate(active - 1));
-		nextBtn?.addEventListener('click', () => activate(active + 1));
 
 		requestAnimationFrame(() => pagers[active]?.playFirst());
 	}
