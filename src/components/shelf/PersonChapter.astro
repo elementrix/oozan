@@ -155,17 +155,26 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	}
 
 	.chapter__hdots {
-		display: flex;
+		display: inline-flex;
+		align-items: center;
 		gap: 0.4rem;
+		width: fit-content;
 		margin-bottom: 1rem;
+		padding: 0.5rem 0.6rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.14);
+		border: 1px solid rgba(255, 255, 255, 0.28);
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
 	}
 
 	.chapter__hdot {
 		width: 14px;
-		height: 3px;
+		height: 4px;
 		padding: 0;
 		border: 0;
-		background: rgba(255, 255, 255, 0.4);
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.5);
 		cursor: pointer;
 		transition:
 			width 0.25s ease,
