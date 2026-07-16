@@ -146,6 +146,7 @@ const { panels } = Astro.props;
 	}
 
 	.shelf {
+		--spine-w: 84px;
 		display: flex;
 		width: 100%;
 		flex: 1 1 auto;
@@ -156,24 +157,31 @@ const { panels } = Astro.props;
 
 	.shelf__panel {
 		position: relative;
-		flex: 0 0 84px;
+		flex: 0 0 auto;
+		width: var(--spine-w);
 		overflow: hidden;
 		cursor: pointer;
 		background: var(--panel-color);
 		border: 0;
 		padding: 0;
 		text-align: left;
-		transition: flex-basis 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+		/* width is set in px by JS so this always transitions px -> px (mixed
+		   units like 84px -> 0% can't interpolate smoothly and just jump) */
+		transition: width 0.75s cubic-bezier(0.42, 0, 1, 1);
 	}
 
 	.shelf__panel[aria-expanded='true'] {
-		flex: 1 1 0%;
 		cursor: default;
 	}
 
 	.shelf__cover {
 		position: absolute;
 		inset: 0;
+		transition: filter 0.3s ease;
+	}
+
+	.shelf__panel:not([aria-expanded='true']):hover .shelf__cover {
+		filter: brightness(1.25);
 	}
 
 	.shelf__cover :global(.shelf__cover-img) {
@@ -228,7 +236,7 @@ const { panels } = Astro.props;
 
 	.shelf__panel[aria-expanded='true'] .shelf__chapters {
 		opacity: 1;
-		transition-delay: 0.35s;
+		transition-delay: 0.5s;
 	}
 
 	.shelf__panel:not([aria-expanded='true']) .shelf__chapters {
@@ -257,7 +265,7 @@ const { panels } = Astro.props;
 
 	.shelf__panel[aria-expanded='true'] .shelf__dots {
 		opacity: 1;
-		transition-delay: 0.35s;
+		transition-delay: 0.5s;
 	}
 
 	.shelf__panel:not([aria-expanded='true']) .shelf__dots {
@@ -287,8 +295,8 @@ const { panels } = Astro.props;
 	}
 
 	@media (max-width: 720px) {
-		.shelf__panel {
-			flex-basis: 52px;
+		.shelf {
+			--spine-w: 52px;
 		}
 	}
 </style>
@@ -409,8 +417,29 @@ const { panels } = Astro.props;
 
 		const pagers = panels.map((panel) => initChapterPaging(panel));
 
+		// widths are set explicitly in px (not via flex-grow/flex-basis %) so the
+		// CSS transition always animates px -> px, which is what actually
+		// interpolates smoothly — mixed units (e.g. 84px -> 0%) just jump.
+		function layout(animate: boolean) {
+			const spineW = parseFloat(getComputedStyle(shelf).getPropertyValue('--spine-w')) || 84;
+			const gap = 2;
+			const collapsedTotal = (panels.length - 1) * spineW + (panels.length - 1) * gap;
+			const activeWidth = shelf.clientWidth - collapsedTotal;
+			panels.forEach((p, i) => {
+				if (!animate) p.style.transition = 'none';
+				p.style.width = `${i === active ? activeWidth : spineW}px`;
+			});
+			if (!animate) {
+				void shelf.offsetHeight;
+				panels.forEach((p) => {
+					p.style.transition = '';
+				});
+			}
+		}
+
 		function render() {
 			panels.forEach((p, i) => p.setAttribute('aria-expanded', String(i === active)));
+			layout(true);
 		}
 
 		function activate(i: number) {
@@ -433,6 +462,14 @@ const { panels } = Astro.props;
 					activate(i);
 				}
 			});
+		});
+
+		layout(false);
+
+		let resizeTimer: ReturnType<typeof setTimeout>;
+		window.addEventListener('resize', () => {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => layout(false), 100);
 		});
 
 		requestAnimationFrame(() => pagers[active]?.playFirst());
