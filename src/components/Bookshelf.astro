@@ -353,7 +353,10 @@ const total = String(panels.length).padStart(2, '0');
 	function initChapterPaging(panel: HTMLElement) {
 		const chaptersEl = panel.querySelector<HTMLElement>('.shelf__chapters');
 		if (!chaptersEl) return null;
-		const chapters = Array.from(chaptersEl.children) as HTMLElement[];
+		// filter out non-chapter siblings (e.g. Astro can inject a deduped <script> tag inline here)
+		const chapters = Array.from(chaptersEl.children).filter((el) =>
+			el.classList.contains('chapter'),
+		) as HTMLElement[];
 		const dots = Array.from(panel.querySelectorAll<HTMLButtonElement>('.shelf__dot'));
 		let current = 0;
 		let cooling = false;

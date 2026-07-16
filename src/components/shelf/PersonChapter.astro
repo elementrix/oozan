@@ -11,40 +11,48 @@ interface Props {
 }
 
 const { name, images, href, index, total } = Astro.props;
-const hero = images[0];
-const strip = images.slice(1, 5);
 ---
 
 <section class="chapter">
-	<div class="chapter__media">
+	<div class="chapter__gallery" data-h-gallery>
 		{
-			hero && (
-				<Image
-					src={hero}
-					alt={name}
-					class="chapter__poster"
-					widths={[480, 900, 1400]}
-					sizes="(max-width: 900px) 100vw, 60vw"
-					loading="lazy"
-				/>
-			)
+			images.map((img, i) => (
+				<div class="chapter__slide">
+					<Image
+						src={img}
+						alt={`${name} ${i + 1}`}
+						class="chapter__photo"
+						widths={[480, 900, 1400]}
+						sizes="(max-width: 900px) 100vw, 60vw"
+						loading="lazy"
+					/>
+				</div>
+			))
 		}
-		<div class="chapter__scrim" aria-hidden="true"></div>
 	</div>
+
+	{
+		images.length > 1 && (
+			<div class="chapter__hdots" data-h-dots aria-hidden="true">
+				{images.map((_, i) => (
+					<button
+						class="chapter__hdot"
+						type="button"
+						data-h-dot-index={i}
+						aria-current={i === 0 ? 'true' : 'false'}
+						aria-label={`사진 ${i + 1}`}
+					/>
+				))}
+			</div>
+		)
+	}
+
+	<div class="chapter__scrim" aria-hidden="true"></div>
 	<div class="chapter__body">
 		<p class="chapter__index">
 			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
 		</p>
 		<h4 class="chapter__title">{name}</h4>
-		{
-			strip.length > 0 && (
-				<div class="chapter__strip">
-					{strip.map((img) => (
-						<Image src={img} alt={name} class="chapter__strip-img" widths={[200, 320]} sizes="120px" loading="lazy" />
-					))}
-				</div>
-			)
-		}
 		<a class="chapter__link" href={href}>
 			전체 갤러리 보기 →
 		</a>
@@ -57,26 +65,71 @@ const strip = images.slice(1, 5);
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
+		background: var(--panel-color);
 	}
 
-	.chapter__media {
+	.chapter__gallery {
 		position: absolute;
 		inset: 0;
-		background: #000;
-	}
-
-	.chapter__media :global(.chapter__poster) {
-		position: absolute;
-		inset: 0;
-		width: 100%;
+		display: flex;
 		height: 100%;
-		object-fit: cover;
+		transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.chapter__slide {
+		flex: 0 0 100%;
+		height: 100%;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.chapter__slide :global(.chapter__photo) {
+		max-width: 100%;
+		max-height: 100%;
+		width: auto;
+		height: auto;
+		object-fit: contain;
+	}
+
+	.chapter__hdots {
+		position: absolute;
+		top: 1.5rem;
+		left: 50%;
+		transform: translateX(-50%);
+		z-index: 5;
+		display: flex;
+		gap: 0.4rem;
+	}
+
+	.chapter__hdot {
+		width: 14px;
+		height: 3px;
+		padding: 0;
+		border: 0;
+		background: rgba(255, 255, 255, 0.4);
+		cursor: pointer;
+		transition:
+			width 0.25s ease,
+			background 0.25s ease;
+	}
+
+	.chapter__hdot:hover {
+		background: rgba(255, 255, 255, 0.7);
+	}
+
+	.chapter__hdot[aria-current='true'] {
+		width: 26px;
+		background: #fff;
 	}
 
 	.chapter__scrim {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.2) 100%);
+		background:
+			linear-gradient(0deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 32%),
+			linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 12%);
+		pointer-events: none;
 	}
 
 	.chapter__body {
@@ -86,6 +139,11 @@ const strip = images.slice(1, 5);
 		bottom: 0;
 		max-width: 640px;
 		padding: clamp(1.5rem, 3vw, 3rem);
+		pointer-events: none;
+	}
+
+	.chapter__body > * {
+		pointer-events: auto;
 	}
 
 	.chapter__index {
@@ -102,24 +160,11 @@ const strip = images.slice(1, 5);
 		color: #fff;
 	}
 
-	.chapter__strip {
-		display: flex;
-		gap: 0.5rem;
-		margin-top: 1.25rem;
-	}
-
-	.chapter__strip :global(.chapter__strip-img) {
-		width: 4.5rem;
-		height: 4.5rem;
-		object-fit: cover;
-		flex-shrink: 0;
-	}
-
 	.chapter__link {
 		display: inline-flex;
 		align-items: center;
 		gap: 0.4em;
-		margin-top: 1.25rem;
+		margin-top: 1rem;
 		font-weight: 700;
 		font-size: 0.85rem;
 		color: #fff;
@@ -131,3 +176,71 @@ const strip = images.slice(1, 5);
 		border-color: #fff;
 	}
 </style>
+
+<script>
+	function initHGallery(gallery: HTMLElement) {
+		const slides = Array.from(gallery.children) as HTMLElement[];
+		if (slides.length < 2) return;
+		const chapter = gallery.closest<HTMLElement>('.chapter');
+		const dots = Array.from(chapter?.querySelectorAll<HTMLButtonElement>('.chapter__hdot') ?? []);
+		let index = 0;
+		let cooling = false;
+
+		function render() {
+			gallery.style.transform = `translateX(-${index * 100}%)`;
+			dots.forEach((d, i) => d.setAttribute('aria-current', String(i === index)));
+		}
+
+		function goTo(next: number) {
+			index = Math.max(0, Math.min(slides.length - 1, next));
+			render();
+		}
+
+		dots.forEach((dot, i) => {
+			dot.addEventListener('click', (e) => {
+				e.stopPropagation();
+				goTo(i);
+			});
+		});
+
+		gallery.addEventListener(
+			'wheel',
+			(e) => {
+				if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical intent: let it bubble to chapter pager
+				e.preventDefault();
+				e.stopPropagation();
+				if (cooling || Math.abs(e.deltaX) < 4) return;
+				cooling = true;
+				goTo(index + (e.deltaX > 0 ? 1 : -1));
+				setTimeout(() => (cooling = false), 500);
+			},
+			{ passive: false },
+		);
+
+		let startX = 0;
+		let startY = 0;
+		gallery.addEventListener(
+			'touchstart',
+			(e) => {
+				startX = e.touches[0]?.clientX ?? 0;
+				startY = e.touches[0]?.clientY ?? 0;
+			},
+			{ passive: true },
+		);
+		gallery.addEventListener(
+			'touchend',
+			(e) => {
+				const endX = e.changedTouches[0]?.clientX ?? startX;
+				const endY = e.changedTouches[0]?.clientY ?? startY;
+				const dx = startX - endX;
+				const dy = startY - endY;
+				if (Math.abs(dx) <= Math.abs(dy) || Math.abs(dx) < 28) return; // vertical-dominant: let chapter pager handle it
+				e.stopPropagation();
+				goTo(index + (dx > 0 ? 1 : -1));
+			},
+			{ passive: true },
+		);
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-h-gallery]').forEach(initHGallery);
+</script>

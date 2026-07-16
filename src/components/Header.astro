@@ -13,7 +13,9 @@ const currentPath = Astro.url.pathname;
 
 <header class="site-header">
 	<div class="site-header__inner container">
-		<a href={withBase('/')} class="site-header__brand">OOZAN</a>
+		<a href={withBase('/')} class="site-header__brand">
+			<img src={withBase('/brand/oozan-logo.png')} alt="Oozan" class="site-header__logo" />
+		</a>
 
 		<nav class="site-header__nav" aria-label="주요 메뉴">
 			<ul>
@@ -67,9 +69,15 @@ const currentPath = Astro.url.pathname;
 	}
 
 	.site-header__brand {
-		font-size: 1.3rem;
-		font-weight: 800;
-		letter-spacing: 0.04em;
+		display: flex;
+		align-items: center;
+		height: 100%;
+	}
+
+	.site-header__logo {
+		height: 1.6rem;
+		width: auto;
+		display: block;
 	}
 
 	.site-header__nav ul {
