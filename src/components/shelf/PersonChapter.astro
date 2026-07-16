@@ -11,19 +11,21 @@ interface Props {
 }
 
 const { name, images, href, index, total } = Astro.props;
+// pad with clones of the last/first photo so the peek carousel can wrap seamlessly
+const padded = images.length > 1 ? [images[images.length - 1], ...images, images[0]] : images;
 ---
 
 <section class="chapter">
-	<div class="chapter__gallery" data-h-gallery>
+	<div class="chapter__gallery" data-h-gallery data-total={images.length}>
 		{
-			images.map((img, i) => (
-				<div class="chapter__slide">
+			padded.map((img, i) => (
+				<div class="chapter__slide" data-slide data-slide-i={i}>
 					<Image
 						src={img}
-						alt={`${name} ${i + 1}`}
+						alt={name}
 						class="chapter__photo"
 						widths={[480, 900, 1400]}
-						sizes="(max-width: 900px) 100vw, 60vw"
+						sizes="(max-width: 900px) 76vw, 46vw"
 						loading="lazy"
 					/>
 				</div>
@@ -33,22 +35,40 @@ const { name, images, href, index, total } = Astro.props;
 
 	{
 		images.length > 1 && (
-			<div class="chapter__hdots" data-h-dots aria-hidden="true">
-				{images.map((_, i) => (
-					<button
-						class="chapter__hdot"
-						type="button"
-						data-h-dot-index={i}
-						aria-current={i === 0 ? 'true' : 'false'}
-						aria-label={`사진 ${i + 1}`}
-					/>
-				))}
-			</div>
+			<>
+				<div class="chapter__edge chapter__edge--left" aria-hidden="true" />
+				<div class="chapter__edge chapter__edge--right" aria-hidden="true" />
+				<button class="chapter__hnav chapter__hnav--prev" type="button" data-h-prev aria-label="이전 사진">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+				<button class="chapter__hnav chapter__hnav--next" type="button" data-h-next aria-label="다음 사진">
+					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+			</>
 		)
 	}
 
 	<div class="chapter__scrim" aria-hidden="true"></div>
 	<div class="chapter__body">
+		{
+			images.length > 1 && (
+				<div class="chapter__hdots" data-h-dots aria-hidden="true">
+					{images.map((_, i) => (
+						<button
+							class="chapter__hdot"
+							type="button"
+							data-h-dot-index={i}
+							aria-current={i === 0 ? 'true' : 'false'}
+							aria-label={`사진 ${i + 1}`}
+						/>
+					))}
+				</div>
+			)
+		}
 		<p class="chapter__index">
 			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
 		</p>
@@ -71,35 +91,103 @@ const { name, images, href, index, total } = Astro.props;
 	.chapter__gallery {
 		position: absolute;
 		inset: 0;
-		display: flex;
-		height: 100%;
-		transition: transform 0.45s cubic-bezier(0.65, 0, 0.35, 1);
 	}
 
 	.chapter__slide {
-		flex: 0 0 100%;
-		height: 100%;
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		width: 76%;
+		left: 12%;
 		display: flex;
 		align-items: center;
 		justify-content: center;
+		transition: left 0.45s cubic-bezier(0.65, 0, 0.35, 1);
 	}
 
 	.chapter__slide :global(.chapter__photo) {
-		max-width: 100%;
-		max-height: 100%;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.chapter__slide.is-active :global(.chapter__photo) {
 		width: auto;
 		height: auto;
+		max-width: 100%;
+		max-height: 100%;
 		object-fit: contain;
 	}
 
-	.chapter__hdots {
+	.chapter__edge {
 		position: absolute;
-		top: 1.5rem;
-		left: 50%;
-		transform: translateX(-50%);
-		z-index: 5;
+		top: 0;
+		bottom: 0;
+		width: 20%;
+		z-index: 4;
+		pointer-events: none;
+	}
+
+	.chapter__edge--left {
+		left: 0;
+		background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+	}
+
+	.chapter__edge--right {
+		right: 0;
+		background: linear-gradient(270deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
+	}
+
+	.chapter__hnav {
+		position: absolute;
+		top: 50%;
+		transform: translateY(-50%);
+		z-index: 6;
+		border: 0;
+		background: none;
+		color: #fff;
+		padding: 0.75rem;
+		cursor: pointer;
+		opacity: 0.85;
+	}
+
+	.chapter__hnav:hover {
+		opacity: 1;
+	}
+
+	.chapter__hnav--prev {
+		left: 0.25rem;
+	}
+
+	.chapter__hnav--next {
+		right: 0.25rem;
+	}
+
+	.chapter__scrim {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 32%);
+		pointer-events: none;
+	}
+
+	.chapter__body {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		max-width: 640px;
+		padding: clamp(1.5rem, 3vw, 3rem);
+		pointer-events: none;
+	}
+
+	.chapter__body > * {
+		pointer-events: auto;
+	}
+
+	.chapter__hdots {
 		display: flex;
 		gap: 0.4rem;
+		margin-bottom: 1rem;
 	}
 
 	.chapter__hdot {
@@ -121,29 +209,6 @@ const { name, images, href, index, total } = Astro.props;
 	.chapter__hdot[aria-current='true'] {
 		width: 26px;
 		background: #fff;
-	}
-
-	.chapter__scrim {
-		position: absolute;
-		inset: 0;
-		background:
-			linear-gradient(0deg, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0) 32%),
-			linear-gradient(180deg, rgba(0, 0, 0, 0.45) 0%, rgba(0, 0, 0, 0) 12%);
-		pointer-events: none;
-	}
-
-	.chapter__body {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		max-width: 640px;
-		padding: clamp(1.5rem, 3vw, 3rem);
-		pointer-events: none;
-	}
-
-	.chapter__body > * {
-		pointer-events: auto;
 	}
 
 	.chapter__index {
@@ -178,28 +243,84 @@ const { name, images, href, index, total } = Astro.props;
 </style>
 
 <script>
+	const SLIDE_STEP = 80; // % — distance between consecutive slide centers
+	const SLIDE_OFFSET = 12; // % — left margin when centered (also the peek width)
+	const TRANSITION_MS = 460;
+
 	function initHGallery(gallery: HTMLElement) {
-		const slides = Array.from(gallery.children) as HTMLElement[];
-		if (slides.length < 2) return;
+		const total = Number(gallery.dataset.total ?? 0);
+		if (total < 2) return;
+		const slides = Array.from(gallery.querySelectorAll<HTMLElement>('[data-slide]'));
 		const chapter = gallery.closest<HTMLElement>('.chapter');
 		const dots = Array.from(chapter?.querySelectorAll<HTMLButtonElement>('.chapter__hdot') ?? []);
-		let index = 0;
+		const prevBtn = chapter?.querySelector<HTMLElement>('[data-h-prev]');
+		const nextBtn = chapter?.querySelector<HTMLElement>('[data-h-next]');
+
+		let virtual = 1; // index into the padded [last, ...real, first] array; 1 == real index 0
 		let cooling = false;
 
-		function render() {
-			gallery.style.transform = `translateX(-${index * 100}%)`;
-			dots.forEach((d, i) => d.setAttribute('aria-current', String(i === index)));
+		function position(animate: boolean) {
+			slides.forEach((el, i) => {
+				if (!animate) el.style.transition = 'none';
+				el.style.left = `${SLIDE_OFFSET + (i - virtual) * SLIDE_STEP}%`;
+				el.classList.toggle('is-active', i === virtual);
+			});
+			if (!animate) {
+				void gallery.offsetHeight; // force reflow before re-enabling transitions
+				slides.forEach((el) => {
+					el.style.transition = '';
+				});
+			}
 		}
 
-		function goTo(next: number) {
-			index = Math.max(0, Math.min(slides.length - 1, next));
-			render();
+		function updateDots() {
+			const real = (((virtual - 1) % total) + total) % total;
+			dots.forEach((d, i) => d.setAttribute('aria-current', String(i === real)));
 		}
 
+		function step(dir: number) {
+			virtual += dir;
+			position(true);
+			updateDots();
+			setTimeout(() => {
+				if (virtual === total + 1) {
+					virtual = 1;
+					position(false);
+				} else if (virtual === 0) {
+					virtual = total;
+					position(false);
+				}
+			}, TRANSITION_MS);
+		}
+
+		function jumpTo(real: number) {
+			virtual = real + 1;
+			position(true);
+			updateDots();
+		}
+
+		position(false);
+		updateDots();
+
+		function guardedStep(dir: number) {
+			if (cooling) return;
+			cooling = true;
+			step(dir);
+			setTimeout(() => (cooling = false), TRANSITION_MS + 40);
+		}
+
+		prevBtn?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			guardedStep(-1);
+		});
+		nextBtn?.addEventListener('click', (e) => {
+			e.stopPropagation();
+			guardedStep(1);
+		});
 		dots.forEach((dot, i) => {
 			dot.addEventListener('click', (e) => {
 				e.stopPropagation();
-				goTo(i);
+				jumpTo(i);
 			});
 		});
 
@@ -209,10 +330,8 @@ const { name, images, href, index, total } = Astro.props;
 				if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return; // vertical intent: let it bubble to chapter pager
 				e.preventDefault();
 				e.stopPropagation();
-				if (cooling || Math.abs(e.deltaX) < 4) return;
-				cooling = true;
-				goTo(index + (e.deltaX > 0 ? 1 : -1));
-				setTimeout(() => (cooling = false), 500);
+				if (Math.abs(e.deltaX) < 4) return;
+				guardedStep(e.deltaX > 0 ? 1 : -1);
 			},
 			{ passive: false },
 		);
@@ -236,7 +355,7 @@ const { name, images, href, index, total } = Astro.props;
 				const dy = startY - endY;
 				if (Math.abs(dx) <= Math.abs(dy) || Math.abs(dx) < 28) return; // vertical-dominant: let chapter pager handle it
 				e.stopPropagation();
-				goTo(index + (dx > 0 ? 1 : -1));
+				guardedStep(dx > 0 ? 1 : -1);
 			},
 			{ passive: true },
 		);
