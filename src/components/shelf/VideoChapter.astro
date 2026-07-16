@@ -102,6 +102,14 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		position: absolute;
 		inset: 0;
 		z-index: 3;
+		/* off at first so YouTube's transient title/play-pause overlay stays
+		   clickable; JS engages this a few seconds after playback starts so
+		   wheel/touch reliably reaches the chapter pager instead of the iframe */
+		pointer-events: none;
+	}
+
+	.chapter__scrollcatch[data-active='true'] {
+		pointer-events: auto;
 	}
 
 	.chapter__scrim {

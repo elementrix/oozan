@@ -42,10 +42,18 @@ const { panels } = Astro.props;
 <div class="shelf-wrap">
 	<div class="shelf" data-shelf>
 		{
-			panels.map((p, i) => (
+			panels.map((p, i) => {
+				// snap's photo carousel already uses left/right swipes for photo-to-photo
+				// navigation inside a chapter, so it keeps vertical chapter-to-chapter
+				// paging even on mobile — every other panel switches to horizontal
+				// chapter paging on small screens where a second, nested swipe axis
+				// isn't in play
+				const chapterAxis = p.chapters.some((ch) => ch.type === 'person') ? 'vertical' : 'responsive';
+				return (
 				<div
 					class="shelf__panel"
 					data-panel
+					data-chapter-axis={chapterAxis}
 					tabindex="0"
 					role="button"
 					aria-expanded={i === 0 ? 'true' : 'false'}
@@ -134,7 +142,8 @@ const { panels } = Astro.props;
 						</div>
 					)}
 				</div>
-			))
+				);
+			})
 		}
 	</div>
 </div>
@@ -299,6 +308,38 @@ const { panels } = Astro.props;
 		.shelf {
 			--spine-w: 52px;
 		}
+
+		/* panels without a nested horizontal swipe (everything but snap's photo
+		   carousel) page chapters left/right on mobile instead of up/down */
+		.shelf__panel[data-chapter-axis='responsive'] .shelf__chapters {
+			display: flex;
+			flex-direction: row;
+			overflow-x: hidden;
+		}
+
+		.shelf__panel[data-chapter-axis='responsive'] .shelf__chapters > :global(.chapter) {
+			flex: 0 0 100%;
+			height: 100%;
+		}
+
+		.shelf__panel[data-chapter-axis='responsive'] .shelf__dots {
+			top: clamp(1rem, 3vw, 1.5rem);
+			left: 50%;
+			right: auto;
+			bottom: auto;
+			transform: translateX(-50%);
+			flex-direction: row;
+		}
+
+		.shelf__panel[data-chapter-axis='responsive'] .shelf__dot {
+			width: 14px;
+			height: 4px;
+		}
+
+		.shelf__panel[data-chapter-axis='responsive'] .shelf__dot[aria-current='true'] {
+			width: 26px;
+			height: 4px;
+		}
 	}
 </style>
 
@@ -318,12 +359,26 @@ const { panels } = Astro.props;
 		iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
 		media.appendChild(iframe);
 		el.dataset.playing = 'true';
+
+		// YouTube shows its own transient title/play-pause overlay for the
+		// first few seconds after load — keep the scrollcatch passive during
+		// that window so it stays clickable, then engage it so wheel/touch
+		// reliably reaches the chapter pager instead of the iframe
+		const scrollcatch = el.querySelector<HTMLElement>('[data-scrollcatch]');
+		if (scrollcatch) {
+			scrollcatch.dataset.active = 'false';
+			setTimeout(() => {
+				if (el.dataset.playing === 'true') scrollcatch.dataset.active = 'true';
+			}, 3000);
+		}
 	}
 
 	function stopChapterVideo(el: HTMLElement) {
 		if (el.dataset.playing !== 'true') return;
 		el.querySelector('.chapter__iframe')?.remove();
 		el.dataset.playing = 'false';
+		const scrollcatch = el.querySelector<HTMLElement>('[data-scrollcatch]');
+		if (scrollcatch) scrollcatch.dataset.active = 'false';
 		const muteBtn = el.querySelector<HTMLButtonElement>('[data-mute-toggle]');
 		if (muteBtn) {
 			muteBtn.dataset.muted = 'true';
@@ -331,10 +386,6 @@ const { panels } = Astro.props;
 		}
 	}
 
-	// videos autoplay controls-free, so a click on the video area shouldn't
-	// need to reach the iframe for anything — the overlay just needs to
-	// exist so wheel/touch over the video hits our own listeners instead of
-	// being swallowed by the cross-origin YouTube frame
 	function initMuteToggle(chapter: HTMLElement) {
 		const btn = chapter.querySelector<HTMLButtonElement>('[data-mute-toggle]');
 		if (!btn) return;
@@ -361,8 +412,15 @@ const { panels } = Astro.props;
 			el.classList.contains('chapter'),
 		) as HTMLElement[];
 		const dots = Array.from(panel.querySelectorAll<HTMLButtonElement>('.shelf__dot'));
+		// panels without a nested horizontal swipe (see the 'responsive' attribute
+		// set in the template) page left/right on mobile instead of up/down
+		const isResponsiveAxis = panel.dataset.chapterAxis === 'responsive';
 		let current = 0;
 		let cooling = false;
+
+		function isMobileAxis() {
+			return isResponsiveAxis && window.matchMedia('(max-width: 720px)').matches;
+		}
 
 		function updateDots() {
 			dots.forEach((d, i) => d.setAttribute('aria-current', String(i === current)));
@@ -379,7 +437,12 @@ const { panels } = Astro.props;
 			const leaving = chapters[current];
 			if (leaving?.hasAttribute('data-video-chapter')) stopChapterVideo(leaving);
 			current = index;
-			chaptersEl!.scrollTo({ top: chapters[current].offsetTop, behavior: 'smooth' });
+			const target = chapters[current];
+			if (isMobileAxis()) {
+				chaptersEl!.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
+			} else {
+				chaptersEl!.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
+			}
 			updateDots();
 			playCurrentIfVideo();
 		}
@@ -388,20 +451,23 @@ const { panels } = Astro.props;
 			'wheel',
 			(e) => {
 				if (panel.getAttribute('aria-expanded') !== 'true') return;
-				if (Math.abs(e.deltaY) < 4) return;
+				const delta = isMobileAxis() ? e.deltaX : e.deltaY;
+				if (Math.abs(delta) < 4) return;
 				e.preventDefault();
 				if (cooling) return;
 				cooling = true;
-				goTo(current + (e.deltaY > 0 ? 1 : -1));
+				goTo(current + (delta > 0 ? 1 : -1));
 				setTimeout(() => (cooling = false), 650);
 			},
 			{ passive: false },
 		);
 
+		let touchStartX: number | null = null;
 		let touchStartY: number | null = null;
 		chaptersEl.addEventListener(
 			'touchstart',
 			(e) => {
+				touchStartX = e.touches[0]?.clientX ?? null;
 				touchStartY = e.touches[0]?.clientY ?? null;
 			},
 			{ passive: true },
@@ -410,11 +476,15 @@ const { panels } = Astro.props;
 			'touchend',
 			(e) => {
 				if (touchStartY === null || cooling) return;
-				const dy = touchStartY - (e.changedTouches[0]?.clientY ?? touchStartY);
+				const mobile = isMobileAxis();
+				const delta = mobile
+					? (touchStartX ?? 0) - (e.changedTouches[0]?.clientX ?? touchStartX ?? 0)
+					: touchStartY - (e.changedTouches[0]?.clientY ?? touchStartY);
+				touchStartX = null;
 				touchStartY = null;
-				if (Math.abs(dy) < 28) return;
+				if (Math.abs(delta) < 28) return;
 				cooling = true;
-				goTo(current + (dy > 0 ? 1 : -1));
+				goTo(current + (delta > 0 ? 1 : -1));
 				setTimeout(() => (cooling = false), 650);
 			},
 			{ passive: true },
@@ -433,6 +503,7 @@ const { panels } = Astro.props;
 				if (playing?.hasAttribute('data-video-chapter')) stopChapterVideo(playing);
 				current = 0;
 				chaptersEl!.scrollTop = 0;
+				chaptersEl!.scrollLeft = 0;
 				updateDots();
 			},
 			playFirst: playCurrentIfVideo,
