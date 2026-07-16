@@ -79,7 +79,7 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
-		background: var(--panel-color);
+		background: #fff;
 	}
 
 	.chapter__gallery {
@@ -91,14 +91,21 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		position: absolute;
 		top: 0;
 		height: 100%;
+		/* width is set explicitly in px by JS — leaving it to shrink-to-fit
+		   auto sizing makes the browser clamp it to the containing block's
+		   *remaining* width (blockWidth - left), which squashes slides that
+		   sit near the right edge */
 		border-right: 1px solid rgba(255, 255, 255, 0.55);
-		transition: left 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+		transition:
+			left 0.45s cubic-bezier(0.65, 0, 0.35, 1),
+			width 0.45s cubic-bezier(0.65, 0, 0.35, 1);
 	}
 
 	.chapter__slide :global(.chapter__photo) {
 		height: 100%;
-		width: auto;
+		width: 100%;
 		display: block;
+		object-fit: cover;
 		filter: brightness(0.5);
 	}
 
@@ -219,10 +226,21 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		let virtual = 1; // index into the padded [last, ...real, first] array; 1 == real index 0
 		let cooling = false;
 
+		function slideWidth(el: HTMLElement, galleryHeight: number) {
+			const img = el.querySelector('img');
+			// read the intrinsic ratio off the HTML width/height attributes (set
+			// by Astro's Image component) rather than the rendered box — that's
+			// available immediately and isn't affected by layout/positioning
+			const w = Number(img?.getAttribute('width')) || 1;
+			const h = Number(img?.getAttribute('height')) || 1;
+			return galleryHeight * (w / h);
+		}
+
 		function position(animate: boolean) {
 			// each slide is sized to its own photo's natural aspect ratio, so
 			// widths vary — lay them out by walking outward from the active one
-			const widths = slides.map((el) => el.getBoundingClientRect().width);
+			const galleryHeight = gallery.clientHeight;
+			const widths = slides.map((el) => slideWidth(el, galleryHeight));
 			const leftOfActive = (gallery.clientWidth - widths[virtual]) / 2;
 			const lefts: number[] = new Array(slides.length);
 			lefts[virtual] = leftOfActive;
@@ -243,6 +261,7 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 			slides.forEach((el, i) => {
 				if (!animate) el.style.transition = 'none';
 				el.style.left = `${lefts[i]}px`;
+				el.style.width = `${widths[i]}px`;
 				el.classList.toggle('is-active', i === virtual);
 			});
 			if (!animate) {
