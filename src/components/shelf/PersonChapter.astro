@@ -25,7 +25,7 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 						alt={name}
 						class="chapter__photo"
 						widths={[480, 900, 1400]}
-						sizes="(max-width: 900px) 76vw, 46vw"
+						sizes="(max-width: 900px) 70vw, 32vw"
 						loading="lazy"
 					/>
 				</div>
@@ -36,8 +36,6 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	{
 		images.length > 1 && (
 			<>
-				<div class="chapter__edge chapter__edge--left" aria-hidden="true" />
-				<div class="chapter__edge chapter__edge--right" aria-hidden="true" />
 				<button class="chapter__hnav chapter__hnav--prev" type="button" data-h-prev aria-label="이전 사진">
 					<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
@@ -96,13 +94,14 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	.chapter__slide {
 		position: absolute;
 		top: 0;
-		bottom: 0;
-		width: 76%;
-		left: 12%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
+		height: 100%;
+		aspect-ratio: 3 / 4;
 		transition: left 0.45s cubic-bezier(0.65, 0, 0.35, 1);
+		opacity: 0.5;
+	}
+
+	.chapter__slide.is-active {
+		opacity: 1;
 	}
 
 	.chapter__slide :global(.chapter__photo) {
@@ -112,30 +111,7 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	}
 
 	.chapter__slide.is-active :global(.chapter__photo) {
-		width: auto;
-		height: auto;
-		max-width: 100%;
-		max-height: 100%;
 		object-fit: contain;
-	}
-
-	.chapter__edge {
-		position: absolute;
-		top: 0;
-		bottom: 0;
-		width: 20%;
-		z-index: 4;
-		pointer-events: none;
-	}
-
-	.chapter__edge--left {
-		left: 0;
-		background: linear-gradient(90deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
-	}
-
-	.chapter__edge--right {
-		right: 0;
-		background: linear-gradient(270deg, rgba(0, 0, 0, 0.8) 0%, rgba(0, 0, 0, 0) 100%);
 	}
 
 	.chapter__hnav {
@@ -144,9 +120,9 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		transform: translateY(-50%);
 		z-index: 6;
 		border: 0;
-		background: none;
+		background: rgba(0, 0, 0, 0.45);
 		color: #fff;
-		padding: 0.75rem;
+		padding: 0.75rem 0.6rem;
 		cursor: pointer;
 		opacity: 0.85;
 	}
@@ -156,11 +132,11 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	}
 
 	.chapter__hnav--prev {
-		left: 0.25rem;
+		left: 0.75rem;
 	}
 
 	.chapter__hnav--next {
-		right: 0.25rem;
+		right: 3.25rem;
 	}
 
 	.chapter__scrim {
@@ -243,8 +219,7 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 </style>
 
 <script>
-	const SLIDE_STEP = 80; // % — distance between consecutive slide centers
-	const SLIDE_OFFSET = 12; // % — left margin when centered (also the peek width)
+	const GAP_PX = 20;
 	const TRANSITION_MS = 460;
 
 	function initHGallery(gallery: HTMLElement) {
@@ -260,9 +235,12 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		let cooling = false;
 
 		function position(animate: boolean) {
+			const cardWidth = slides[0].getBoundingClientRect().width;
+			const step = cardWidth + GAP_PX;
+			const centerOffset = (gallery.clientWidth - cardWidth) / 2;
 			slides.forEach((el, i) => {
 				if (!animate) el.style.transition = 'none';
-				el.style.left = `${SLIDE_OFFSET + (i - virtual) * SLIDE_STEP}%`;
+				el.style.left = `${centerOffset + (i - virtual) * step}px`;
 				el.classList.toggle('is-active', i === virtual);
 			});
 			if (!animate) {
@@ -301,6 +279,19 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 
 		position(false);
 		updateDots();
+
+		let resizeTimer: ReturnType<typeof setTimeout>;
+		window.addEventListener('resize', () => {
+			clearTimeout(resizeTimer);
+			resizeTimer = setTimeout(() => position(false), 100);
+		});
+
+		// the panel starts collapsed (84px wide), so the initial layout above is measured
+		// against the wrong width — recompute once it finishes animating open
+		const panel = gallery.closest<HTMLElement>('.shelf__panel');
+		panel?.addEventListener('transitionend', (e) => {
+			if (e.propertyName === 'flex-basis') position(false);
+		});
 
 		function guardedStep(dir: number) {
 			if (cooling) return;
