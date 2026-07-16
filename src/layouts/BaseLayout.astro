@@ -7,9 +7,14 @@ import { withBase } from '../lib/url';
 interface Props {
 	title: string;
 	description?: string;
+	hideFooter?: boolean;
 }
 
-const { title, description = 'Oozan — 필모, 스냅, 연구, 작곡을 아우르는 포트폴리오.' } = Astro.props;
+const {
+	title,
+	description = 'Oozan — 필모, 스냅, 연구, 작곡을 아우르는 포트폴리오.',
+	hideFooter = false,
+} = Astro.props;
 ---
 
 <!doctype html>
@@ -27,6 +32,6 @@ const { title, description = 'Oozan — 필모, 스냅, 연구, 작곡을 아우
 		<main>
 			<slot />
 		</main>
-		<Footer />
+		{!hideFooter && <Footer />}
 	</body>
 </html>

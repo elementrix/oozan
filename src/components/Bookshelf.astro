@@ -21,67 +21,78 @@ const { panels } = Astro.props;
 const total = String(panels.length).padStart(2, '0');
 ---
 
-<div class="shelf" data-shelf>
-	{
-		panels.map((p, i) => (
-			<div
-				class="shelf__panel"
-				data-panel
-				tabindex="0"
-				role="button"
-				aria-expanded={i === 0 ? 'true' : 'false'}
-				aria-label={`${p.title} 열기`}
-				style={`--panel-color:${p.color}`}
-			>
-				<div class="shelf__cover">
-					{p.image && (
-						<Image
-							src={p.image}
-							alt={p.title}
-							class="shelf__cover-img"
-							widths={[480, 900, 1400]}
-							sizes="(max-width: 900px) 100vw, 60vw"
-							loading={i === 0 ? 'eager' : 'lazy'}
-						/>
-					)}
-					<div class="shelf__scrim" aria-hidden="true" />
+<div class="shelf-wrap">
+	<div class="shelf" data-shelf>
+		{
+			panels.map((p, i) => (
+				<div
+					class="shelf__panel"
+					data-panel
+					tabindex="0"
+					role="button"
+					aria-expanded={i === 0 ? 'true' : 'false'}
+					aria-label={`${p.title} 열기`}
+					style={`--panel-color:${p.color}`}
+				>
+					<div class="shelf__cover">
+						{p.image ? (
+							<Image
+								src={p.image}
+								alt={p.title}
+								class="shelf__cover-img"
+								widths={[480, 900, 1400]}
+								sizes="(max-width: 900px) 100vw, 60vw"
+								loading={i === 0 ? 'eager' : 'lazy'}
+							/>
+						) : (
+							<div class="shelf__cover-solid" aria-hidden="true" />
+						)}
+						<div class="shelf__scrim" aria-hidden="true" />
+					</div>
+
+					<span class="shelf__spine-label">
+						{p.key} — {p.titleEn}
+					</span>
+
+					<div class="shelf__content">
+						<p class="shelf__eyebrow">
+							{p.key} / {total} — {p.titleEn}
+						</p>
+						<h3 class="shelf__title">{p.title}</h3>
+						<p class="shelf__meta">{p.meta}</p>
+						<p class="shelf__desc">{p.description}</p>
+						<a class="shelf__link" href={p.href}>
+							보러 가기 →
+						</a>
+					</div>
 				</div>
+			))
+		}
+	</div>
 
-				<span class="shelf__spine-label">
-					{p.key} — {p.titleEn}
-				</span>
-
-				<div class="shelf__content">
-					<p class="shelf__eyebrow">
-						{p.key} / {total} — {p.titleEn}
-					</p>
-					<h3 class="shelf__title">{p.title}</h3>
-					<p class="shelf__meta">{p.meta}</p>
-					<p class="shelf__desc">{p.description}</p>
-					<a class="shelf__link" href={p.href}>
-						보러 가기 →
-					</a>
-				</div>
-			</div>
-		))
-	}
-</div>
-
-<div class="shelf__controls">
-	<button class="shelf__nav" type="button" data-shelf-prev aria-label="이전">
-		←
-	</button>
-	<span class="shelf__count"><span data-shelf-current>01</span> / {total}</span>
-	<button class="shelf__nav" type="button" data-shelf-next aria-label="다음">
-		→
-	</button>
+	<div class="shelf__controls">
+		<button class="shelf__nav" type="button" data-shelf-prev aria-label="이전">
+			←
+		</button>
+		<span class="shelf__count"><span data-shelf-current>01</span> / {total}</span>
+		<button class="shelf__nav" type="button" data-shelf-next aria-label="다음">
+			→
+		</button>
+	</div>
 </div>
 
 <style>
+	.shelf-wrap {
+		display: flex;
+		flex-direction: column;
+		height: calc(100vh - var(--header-h) - 1px);
+	}
+
 	.shelf {
 		display: flex;
 		width: 100%;
-		height: min(80vh, 780px);
+		flex: 1 1 auto;
+		min-height: 0;
 		background: #000;
 		gap: 2px;
 	}
@@ -114,24 +125,18 @@ const total = String(panels.length).padStart(2, '0');
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
-		opacity: 0;
-		transition: opacity 0.5s ease;
 	}
 
-	.shelf__panel[aria-expanded='true'] .shelf__cover :global(.shelf__cover-img) {
-		opacity: 1;
+	.shelf__cover-solid {
+		position: absolute;
+		inset: 0;
+		background: var(--panel-color);
 	}
 
 	.shelf__scrim {
 		position: absolute;
 		inset: 0;
-		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.1) 45%, rgba(0, 0, 0, 0.3) 100%);
-		opacity: 0;
-		transition: opacity 0.45s ease;
-	}
-
-	.shelf__panel[aria-expanded='true'] .shelf__scrim {
-		opacity: 1;
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.85) 0%, rgba(0, 0, 0, 0.15) 42%, rgba(0, 0, 0, 0.3) 100%);
 	}
 
 	.shelf__spine-label {
@@ -184,7 +189,7 @@ const total = String(panels.length).padStart(2, '0');
 		font-size: 0.78rem;
 		letter-spacing: 0.14em;
 		text-transform: uppercase;
-		color: rgba(245, 243, 239, 0.7);
+		color: rgba(255, 255, 255, 0.75);
 	}
 
 	.shelf__title {
@@ -200,14 +205,14 @@ const total = String(panels.length).padStart(2, '0');
 		margin-top: 0.6rem;
 		font-size: 0.8rem;
 		letter-spacing: 0.04em;
-		color: rgba(245, 243, 239, 0.65);
+		color: rgba(255, 255, 255, 0.7);
 	}
 
 	.shelf__desc {
 		margin-top: 1rem;
 		font-size: 0.95rem;
 		line-height: 1.65;
-		color: rgba(245, 243, 239, 0.85);
+		color: rgba(255, 255, 255, 0.9);
 	}
 
 	.shelf__link {
@@ -218,7 +223,7 @@ const total = String(panels.length).padStart(2, '0');
 		font-weight: 700;
 		font-size: 0.9rem;
 		color: #fff;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+		border-bottom: 1px solid rgba(255, 255, 255, 0.45);
 		padding-bottom: 0.15rem;
 	}
 
@@ -227,10 +232,11 @@ const total = String(panels.length).padStart(2, '0');
 	}
 
 	.shelf__controls {
+		flex: 0 0 auto;
 		display: flex;
 		align-items: center;
 		gap: 1.5rem;
-		padding: 1rem var(--gutter) 0;
+		padding: 0.75rem var(--gutter);
 		font-size: 0.85rem;
 		color: var(--color-text-dim);
 	}
@@ -254,11 +260,8 @@ const total = String(panels.length).padStart(2, '0');
 	}
 
 	@media (max-width: 720px) {
-		.shelf {
-			height: 62vh;
-		}
 		.shelf__panel {
-			flex-basis: 56px;
+			flex-basis: 52px;
 		}
 		.shelf__title {
 			font-size: clamp(1.6rem, 8vw, 2.5rem);
@@ -272,7 +275,7 @@ const total = String(panels.length).padStart(2, '0');
 <script>
 	function initShelf(shelf: HTMLElement) {
 		const panels = Array.from(shelf.querySelectorAll<HTMLElement>('[data-panel]'));
-		const wrapper = shelf.parentElement;
+		const wrapper = shelf.closest<HTMLElement>('.shelf-wrap');
 		const currentLabel = wrapper?.querySelector('[data-shelf-current]');
 		const prevBtn = wrapper?.querySelector('[data-shelf-prev]');
 		const nextBtn = wrapper?.querySelector('[data-shelf-next]');

@@ -48,20 +48,24 @@ const Tag = href ? 'a' : 'button';
 			transform 0.25s ease;
 	}
 
-	.glass-btn:hover {
-		background: rgba(255, 255, 255, 0.14);
-		border-color: rgba(255, 255, 255, 0.32);
-	}
-
 	.glass-btn--pill {
 		padding: 0.85rem 1.6rem;
 		font-size: 0.9rem;
+	}
+
+	.glass-btn--pill:hover {
+		background: var(--color-text);
+		border-color: var(--color-text);
+		color: var(--color-bg);
 	}
 
 	.glass-btn--play {
 		width: 4.5rem;
 		height: 4.5rem;
 		flex-shrink: 0;
+		background: rgba(20, 20, 22, 0.45);
+		border-color: rgba(255, 255, 255, 0.35);
+		color: #fff;
 	}
 
 	.glass-btn--play svg {
@@ -69,6 +73,8 @@ const Tag = href ? 'a' : 'button';
 	}
 
 	.glass-btn--play:hover {
+		background: rgba(255, 255, 255, 0.16);
+		border-color: #fff;
 		transform: scale(1.08);
 	}
 </style>

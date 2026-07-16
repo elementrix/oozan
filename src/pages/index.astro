@@ -2,7 +2,6 @@
 import { getCollection } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Bookshelf from '../components/Bookshelf.astro';
-import GlassButton from '../components/GlassButton.astro';
 import { withBase } from '../lib/url';
 
 import filmsCover from '../assets/films/premium-project.jpg';
@@ -16,8 +15,6 @@ const [films, research, compositions, people] = await Promise.all([
 	getCollection('people'),
 ]);
 
-const email = 'sgh04069@gmail.com';
-
 const panels = [
 	{
 		key: '01',
@@ -26,7 +23,7 @@ const panels = [
 		meta: `${films.length} WORKS`,
 		description: '기획하고 촬영·편집한 영상 작업들.',
 		href: withBase('/films/'),
-		color: '#6e2d16',
+		color: 'var(--color-spine-1)',
 		image: filmsCover,
 	},
 	{
@@ -36,7 +33,7 @@ const panels = [
 		meta: `${people.length} PEOPLE`,
 		description: '일곱 명의 인물을 담은 스냅 기록.',
 		href: withBase('/snap/'),
-		color: '#39402f',
+		color: 'var(--color-spine-2)',
 		image: snapCover,
 	},
 	{
@@ -46,7 +43,7 @@ const panels = [
 		meta: `${research.length} PAPER`,
 		description: '아스펙트 기반 감정 분석을 중심으로 진행한 연구.',
 		href: withBase('/research/'),
-		color: '#1b2340',
+		color: 'var(--color-spine-3)',
 	},
 	{
 		key: '04',
@@ -55,44 +52,12 @@ const panels = [
 		meta: `${compositions.length} TRACKS`,
 		description: "'좌니뭐하니'라는 이름으로 만든 곡들.",
 		href: withBase('/composition/'),
-		color: '#5b3a1a',
+		color: 'var(--color-spine-4)',
 		image: compositionCover,
 	},
 ];
 ---
 
-<BaseLayout title="Oozan — Portfolio">
-	<section>
-		<Bookshelf panels={panels} />
-	</section>
-
-	<section class="section container about">
-		<div class="about__inner">
-			<p class="eyebrow">About</p>
-			<p class="about__text">
-				한국항공대학교에서 컴퓨터공학을 공부하며 감정 분석 연구를 하는 동시에, 카메라와 음악으로도 기록을 남깁니다.
-				이 사이트는 그 결과물들을 모아둔 아카이브입니다.
-			</p>
-			<GlassButton href={`mailto:${email}`}>연락하기 — {email}</GlassButton>
-		</div>
-	</section>
+<BaseLayout title="Oozan — Portfolio" hideFooter>
+	<Bookshelf panels={panels} />
 </BaseLayout>
-
-<style>
-	.about__inner {
-		max-width: 62ch;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-
-	.about__text {
-		font-size: clamp(1.1rem, 2vw, 1.4rem);
-		line-height: 1.7;
-		color: var(--color-text);
-	}
-
-	.about__inner :global(.glass-btn) {
-		align-self: flex-start;
-	}
-</style>
