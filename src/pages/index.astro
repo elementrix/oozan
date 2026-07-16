@@ -1,12 +1,10 @@
 ---
 import { getCollection } from 'astro:content';
-import { Image } from 'astro:assets';
 import BaseLayout from '../layouts/BaseLayout.astro';
-import GridLineFrame from '../components/GridLineFrame.astro';
+import Bookshelf from '../components/Bookshelf.astro';
 import GlassButton from '../components/GlassButton.astro';
 import { withBase } from '../lib/url';
 
-import heroImage from '../assets/snap/kim-juhye/01.jpg';
 import filmsCover from '../assets/films/premium-project.jpg';
 import snapCover from '../assets/snap/lee-eunmin/01.jpg';
 import compositionCover from '../assets/composition/geuriun-norae.jpg';
@@ -20,98 +18,52 @@ const [films, research, compositions, people] = await Promise.all([
 
 const email = 'sgh04069@gmail.com';
 
-const categories = [
+const panels = [
 	{
 		key: '01',
 		title: '필모',
 		titleEn: 'FILMS',
-		count: `${films.length} works`,
+		meta: `${films.length} WORKS`,
+		description: '기획하고 촬영·편집한 영상 작업들.',
 		href: withBase('/films/'),
+		color: '#6e2d16',
 		image: filmsCover,
 	},
 	{
 		key: '02',
 		title: '스냅',
 		titleEn: 'SNAP',
-		count: `${people.length} people`,
+		meta: `${people.length} PEOPLE`,
+		description: '일곱 명의 인물을 담은 스냅 기록.',
 		href: withBase('/snap/'),
+		color: '#39402f',
 		image: snapCover,
 	},
 	{
 		key: '03',
 		title: '연구',
 		titleEn: 'RESEARCH',
-		count: `${research.length} paper`,
+		meta: `${research.length} PAPER`,
+		description: '아스펙트 기반 감정 분석을 중심으로 진행한 연구.',
 		href: withBase('/research/'),
-		image: null,
+		color: '#1b2340',
 	},
 	{
 		key: '04',
 		title: '작곡',
 		titleEn: 'COMPOSITION',
-		count: `${compositions.length} tracks`,
+		meta: `${compositions.length} TRACKS`,
+		description: "'좌니뭐하니'라는 이름으로 만든 곡들.",
 		href: withBase('/composition/'),
+		color: '#5b3a1a',
 		image: compositionCover,
 	},
 ];
 ---
 
 <BaseLayout title="Oozan — Portfolio">
-	<section class="hero">
-		<GridLineFrame class="hero__frame">
-			<Image src={heroImage} alt="Oozan" class="hero__image" widths={[640, 1000, 1600, 2000]} sizes="100vw" priority />
-			<div class="hero__scrim" aria-hidden="true"></div>
-			<div class="hero__content container">
-				<p class="eyebrow">Jooan Kim · Portfolio</p>
-				<h1 class="hero__title">OOZAN</h1>
-				<p class="hero__lede">
-					영상을 만들고, 사람을 담고, 연구하고, 곡을 씁니다.<br />
-					필모 · 스냅 · 연구 · 작곡, 네 갈래의 기록을 모아둔 공간입니다.
-				</p>
-				<div class="hero__actions">
-					<GlassButton href={`mailto:${email}`}>{email}</GlassButton>
-				</div>
-			</div>
-		</GridLineFrame>
-	</section>
-
-	<section class="section container">
-		<div class="section-head">
-			<p class="eyebrow">Explore</p>
-			<h2 class="display-2">무엇을 만들어왔는지</h2>
-		</div>
-
-		<div class="cat-grid">
-			{
-				categories.map((cat) => (
-					<a class="cat-card" href={cat.href}>
-						{cat.image ? (
-							<Image
-								src={cat.image}
-								alt={cat.titleEn}
-								class="cat-card__image"
-								widths={[400, 700, 1000]}
-								sizes="(max-width: 800px) 100vw, 50vw"
-							/>
-						) : (
-							<div class="cat-card__placeholder" aria-hidden="true">
-								<span>Σ</span>
-							</div>
-						)}
-						<div class="cat-card__scrim" aria-hidden="true" />
-						<div class="cat-card__body">
-							<span class="cat-card__key">{cat.key}</span>
-							<div>
-								<h3 class="cat-card__title">{cat.title}</h3>
-								<p class="cat-card__meta">
-									{cat.titleEn} · {cat.count}
-								</p>
-							</div>
-						</div>
-					</a>
-				))
-			}
-		</div>
+	<section>
+		<Bookshelf panels={panels} />
 	</section>
 
 	<section class="section container about">
@@ -127,150 +79,6 @@ const categories = [
 </BaseLayout>
 
 <style>
-	.hero {
-		padding: clamp(0.75rem, 2vw, 1.5rem);
-	}
-
-	.hero__frame {
-		position: relative;
-		border-radius: var(--radius-lg);
-		min-height: min(88vh, 900px);
-		display: flex;
-		align-items: flex-end;
-	}
-
-	.hero__image {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		object-position: 50% 20%;
-	}
-
-	.hero__scrim {
-		position: absolute;
-		inset: 0;
-		background:
-			linear-gradient(180deg, rgba(10, 10, 11, 0.25) 0%, rgba(10, 10, 11, 0.15) 40%, rgba(10, 10, 11, 0.92) 100%);
-	}
-
-	.hero__content {
-		position: relative;
-		padding-block: clamp(2rem, 6vw, 4.5rem);
-	}
-
-	.hero__title {
-		margin-top: 0.75rem;
-		font-size: clamp(3.5rem, 12vw, 9rem);
-		font-weight: 800;
-		letter-spacing: -0.04em;
-		line-height: 0.9;
-	}
-
-	.hero__lede {
-		margin-top: 1.5rem;
-		max-width: 46ch;
-		font-size: clamp(1rem, 1.8vw, 1.2rem);
-		color: var(--color-text-dim);
-		line-height: 1.7;
-	}
-
-	.hero__actions {
-		margin-top: 2rem;
-	}
-
-	/* ---------- category grid ---------- */
-
-	.cat-grid {
-		display: grid;
-		grid-template-columns: repeat(2, 1fr);
-		gap: clamp(0.75rem, 2vw, 1.5rem);
-	}
-
-	.cat-card {
-		position: relative;
-		aspect-ratio: 4 / 3;
-		border-radius: var(--radius-md);
-		overflow: hidden;
-		border: 1px solid var(--color-border);
-		background: var(--color-bg-card);
-	}
-
-	.cat-card :global(.cat-card__image) {
-		position: absolute;
-		inset: 0;
-		width: 100%;
-		height: 100%;
-		object-fit: cover;
-		transition: transform 0.6s ease;
-	}
-
-	.cat-card:hover :global(.cat-card__image) {
-		transform: scale(1.04);
-	}
-
-	.cat-card__placeholder {
-		position: absolute;
-		inset: 0;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 6rem;
-		font-weight: 800;
-		color: var(--color-border-strong);
-	}
-
-	.cat-card__scrim {
-		position: absolute;
-		inset: 0;
-		background: linear-gradient(180deg, rgba(10, 10, 11, 0) 40%, rgba(10, 10, 11, 0.88) 100%);
-	}
-
-	.cat-card__body {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		display: flex;
-		align-items: flex-end;
-		justify-content: space-between;
-		gap: 1rem;
-		padding: clamp(1.1rem, 2.5vw, 1.75rem);
-	}
-
-	.cat-card__key {
-		font-size: 0.85rem;
-		font-weight: 700;
-		color: var(--color-accent);
-	}
-
-	.cat-card__title {
-		font-size: clamp(1.5rem, 3vw, 2rem);
-		font-weight: 800;
-		letter-spacing: -0.01em;
-	}
-
-	.cat-card__meta {
-		margin-top: 0.3rem;
-		font-size: 0.78rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--color-text-dim);
-	}
-
-	@media (max-width: 640px) {
-		.cat-grid {
-			grid-template-columns: 1fr;
-		}
-	}
-
-	/* ---------- about ---------- */
-
-	.about {
-		padding-top: 0;
-	}
-
 	.about__inner {
 		max-width: 62ch;
 		display: flex;

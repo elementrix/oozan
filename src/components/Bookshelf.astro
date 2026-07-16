@@ -1,0 +1,311 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Panel {
+	key: string;
+	title: string;
+	titleEn: string;
+	meta: string;
+	description: string;
+	href: string;
+	color: string;
+	image?: ImageMetadata;
+}
+
+interface Props {
+	panels: Panel[];
+}
+
+const { panels } = Astro.props;
+const total = String(panels.length).padStart(2, '0');
+---
+
+<div class="shelf" data-shelf>
+	{
+		panels.map((p, i) => (
+			<div
+				class="shelf__panel"
+				data-panel
+				tabindex="0"
+				role="button"
+				aria-expanded={i === 0 ? 'true' : 'false'}
+				aria-label={`${p.title} 열기`}
+				style={`--panel-color:${p.color}`}
+			>
+				<div class="shelf__cover">
+					{p.image && (
+						<Image
+							src={p.image}
+							alt={p.title}
+							class="shelf__cover-img"
+							widths={[480, 900, 1400]}
+							sizes="(max-width: 900px) 100vw, 60vw"
+							loading={i === 0 ? 'eager' : 'lazy'}
+						/>
+					)}
+					<div class="shelf__scrim" aria-hidden="true" />
+				</div>
+
+				<span class="shelf__spine-label">
+					{p.key} — {p.titleEn}
+				</span>
+
+				<div class="shelf__content">
+					<p class="shelf__eyebrow">
+						{p.key} / {total} — {p.titleEn}
+					</p>
+					<h3 class="shelf__title">{p.title}</h3>
+					<p class="shelf__meta">{p.meta}</p>
+					<p class="shelf__desc">{p.description}</p>
+					<a class="shelf__link" href={p.href}>
+						보러 가기 →
+					</a>
+				</div>
+			</div>
+		))
+	}
+</div>
+
+<div class="shelf__controls">
+	<button class="shelf__nav" type="button" data-shelf-prev aria-label="이전">
+		←
+	</button>
+	<span class="shelf__count"><span data-shelf-current>01</span> / {total}</span>
+	<button class="shelf__nav" type="button" data-shelf-next aria-label="다음">
+		→
+	</button>
+</div>
+
+<style>
+	.shelf {
+		display: flex;
+		width: 100%;
+		height: min(80vh, 780px);
+		background: #000;
+		gap: 2px;
+	}
+
+	.shelf__panel {
+		position: relative;
+		flex: 0 0 84px;
+		overflow: hidden;
+		cursor: pointer;
+		background: var(--panel-color);
+		border: 0;
+		padding: 0;
+		text-align: left;
+		transition: flex-basis 0.6s cubic-bezier(0.65, 0, 0.35, 1);
+	}
+
+	.shelf__panel[aria-expanded='true'] {
+		flex: 1 1 0%;
+		cursor: default;
+	}
+
+	.shelf__cover {
+		position: absolute;
+		inset: 0;
+	}
+
+	.shelf__cover :global(.shelf__cover-img) {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		opacity: 0;
+		transition: opacity 0.5s ease;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__cover :global(.shelf__cover-img) {
+		opacity: 1;
+	}
+
+	.shelf__scrim {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.1) 45%, rgba(0, 0, 0, 0.3) 100%);
+		opacity: 0;
+		transition: opacity 0.45s ease;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__scrim {
+		opacity: 1;
+	}
+
+	.shelf__spine-label {
+		position: absolute;
+		top: 2rem;
+		left: 0;
+		right: 0;
+		display: flex;
+		justify-content: center;
+		writing-mode: vertical-rl;
+		text-orientation: mixed;
+		font-weight: 800;
+		font-size: 1rem;
+		letter-spacing: 0.12em;
+		color: #fff;
+		white-space: nowrap;
+		transition: opacity 0.25s ease;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__spine-label {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.shelf__content {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		max-width: 640px;
+		padding: clamp(1.5rem, 3vw, 3rem);
+		opacity: 0;
+		transform: translateY(16px);
+		transition:
+			opacity 0.35s ease,
+			transform 0.35s ease;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__content {
+		opacity: 1;
+		transform: none;
+		transition-delay: 0.2s;
+	}
+
+	.shelf__panel:not([aria-expanded='true']) .shelf__content {
+		pointer-events: none;
+	}
+
+	.shelf__eyebrow {
+		font-size: 0.78rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: rgba(245, 243, 239, 0.7);
+	}
+
+	.shelf__title {
+		margin-top: 0.5rem;
+		font-size: clamp(2rem, 4.5vw, 3.5rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		line-height: 1;
+		color: #fff;
+	}
+
+	.shelf__meta {
+		margin-top: 0.6rem;
+		font-size: 0.8rem;
+		letter-spacing: 0.04em;
+		color: rgba(245, 243, 239, 0.65);
+	}
+
+	.shelf__desc {
+		margin-top: 1rem;
+		font-size: 0.95rem;
+		line-height: 1.65;
+		color: rgba(245, 243, 239, 0.85);
+	}
+
+	.shelf__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		margin-top: 1.5rem;
+		font-weight: 700;
+		font-size: 0.9rem;
+		color: #fff;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+		padding-bottom: 0.15rem;
+	}
+
+	.shelf__link:hover {
+		border-color: #fff;
+	}
+
+	.shelf__controls {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+		padding: 1rem var(--gutter) 0;
+		font-size: 0.85rem;
+		color: var(--color-text-dim);
+	}
+
+	.shelf__nav {
+		background: none;
+		border: 1px solid var(--color-border);
+		padding: 0.4rem 0.9rem;
+		color: var(--color-text);
+		font-size: 0.95rem;
+		font-family: inherit;
+	}
+
+	.shelf__nav:hover {
+		border-color: var(--color-border-strong);
+	}
+
+	.shelf__count {
+		font-variant-numeric: tabular-nums;
+		letter-spacing: 0.04em;
+	}
+
+	@media (max-width: 720px) {
+		.shelf {
+			height: 62vh;
+		}
+		.shelf__panel {
+			flex-basis: 56px;
+		}
+		.shelf__title {
+			font-size: clamp(1.6rem, 8vw, 2.5rem);
+		}
+		.shelf__desc {
+			display: none;
+		}
+	}
+</style>
+
+<script>
+	function initShelf(shelf: HTMLElement) {
+		const panels = Array.from(shelf.querySelectorAll<HTMLElement>('[data-panel]'));
+		const wrapper = shelf.parentElement;
+		const currentLabel = wrapper?.querySelector('[data-shelf-current]');
+		const prevBtn = wrapper?.querySelector('[data-shelf-prev]');
+		const nextBtn = wrapper?.querySelector('[data-shelf-next]');
+		let active = panels.findIndex((p) => p.getAttribute('aria-expanded') === 'true');
+		if (active < 0) active = 0;
+
+		function render() {
+			panels.forEach((p, i) => p.setAttribute('aria-expanded', String(i === active)));
+			if (currentLabel) currentLabel.textContent = String(active + 1).padStart(2, '0');
+		}
+
+		function activate(i: number) {
+			active = (i + panels.length) % panels.length;
+			render();
+		}
+
+		panels.forEach((p, i) => {
+			p.addEventListener('click', (e) => {
+				if (i === active) return;
+				e.preventDefault();
+				activate(i);
+			});
+			p.addEventListener('keydown', (e) => {
+				if ((e.key === 'Enter' || e.key === ' ') && i !== active) {
+					e.preventDefault();
+					activate(i);
+				}
+			});
+		});
+
+		prevBtn?.addEventListener('click', () => activate(active - 1));
+		nextBtn?.addEventListener('click', () => activate(active + 1));
+	}
+
+	document.querySelectorAll<HTMLElement>('[data-shelf]').forEach(initShelf);
+</script>
