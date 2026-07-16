@@ -1,7 +1,7 @@
 ---
-title: "작렬하는 졸업 02"
+title: "Graduation, you are the present | 브랜드 영상 with AI"
 description: "[한 줄 소개를 입력하세요]"
-youtubeId: "REPLACE_ME"
+youtubeId: "M-RRzfX-oEs"
 cover: "../../assets/films/graduation-explosion-02.jpg"
 order: 2
 ---
