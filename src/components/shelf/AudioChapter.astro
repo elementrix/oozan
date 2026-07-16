@@ -1,0 +1,77 @@
+---
+interface Props {
+	title: string;
+	subtitle?: string;
+	description?: string;
+	src: string;
+	index: number;
+	total: number;
+}
+
+const { title, subtitle, description, src, index, total } = Astro.props;
+---
+
+<section class="chapter">
+	<div class="chapter__inner">
+		<p class="chapter__index">
+			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+		</p>
+		<h4 class="chapter__title">{title}</h4>
+		{subtitle && <p class="chapter__subtitle">{subtitle}</p>}
+		<audio class="chapter__player" controls preload="none" src={src}></audio>
+		{description && <p class="chapter__desc">{description}</p>}
+	</div>
+</section>
+
+<style>
+	.chapter {
+		position: relative;
+		height: 100%;
+		width: 100%;
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+		overflow: hidden;
+		background: var(--panel-color);
+		display: flex;
+		align-items: center;
+	}
+
+	.chapter__inner {
+		width: 100%;
+		max-width: 560px;
+		padding: clamp(1.5rem, 3vw, 3rem);
+	}
+
+	.chapter__index {
+		font-size: 0.78rem;
+		letter-spacing: 0.14em;
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.chapter__title {
+		margin-top: 0.5rem;
+		font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: #fff;
+	}
+
+	.chapter__subtitle {
+		margin-top: 0.4rem;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.7);
+	}
+
+	.chapter__player {
+		width: 100%;
+		height: 40px;
+		margin-top: 2rem;
+	}
+
+	.chapter__desc {
+		margin-top: 1rem;
+		font-size: 0.88rem;
+		line-height: 1.6;
+		color: rgba(255, 255, 255, 0.85);
+	}
+</style>

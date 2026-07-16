@@ -1,5 +1,6 @@
 ---
 import { getCollection } from 'astro:content';
+import type { ImageMetadata } from 'astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import Bookshelf from '../components/Bookshelf.astro';
 import { withBase } from '../lib/url';
@@ -8,12 +9,33 @@ import filmsCover from '../assets/films/premium-project.jpg';
 import snapCover from '../assets/snap/lee-eunmin/01.jpg';
 import compositionCover from '../assets/composition/geuriun-norae.jpg';
 
-const [films, research, compositions, people] = await Promise.all([
+const [filmsRaw, researchRaw, compositionsRaw, peopleRaw] = await Promise.all([
 	getCollection('films'),
 	getCollection('research'),
 	getCollection('compositions'),
 	getCollection('people'),
 ]);
+
+const films = filmsRaw.sort((a, b) => a.data.order - b.data.order);
+const research = researchRaw.sort((a, b) => a.data.order - b.data.order);
+const compositions = compositionsRaw.sort((a, b) => a.data.order - b.data.order);
+const people = peopleRaw.sort((a, b) => a.data.order - b.data.order);
+
+const galleryModules = import.meta.glob<{ default: ImageMetadata }>('/src/assets/snap/*/*.jpg', {
+	eager: true,
+});
+const galleriesBySlug = new Map<string, ImageMetadata[]>();
+for (const [path, mod] of Object.entries(galleryModules)) {
+	const match = path.match(/\/snap\/([^/]+)\//);
+	if (!match) continue;
+	const slug = match[1];
+	const list = galleriesBySlug.get(slug) ?? [];
+	list.push(mod.default);
+	galleriesBySlug.set(slug, list);
+}
+for (const list of galleriesBySlug.values()) {
+	list.sort((a, b) => a.src.localeCompare(b.src));
+}
 
 const panels = [
 	{
@@ -21,39 +43,71 @@ const panels = [
 		title: '필모',
 		titleEn: 'FILMS',
 		meta: `${films.length} WORKS`,
-		description: '기획하고 촬영·편집한 영상 작업들.',
-		href: withBase('/films/'),
 		color: 'var(--color-spine-1)',
 		image: filmsCover,
+		chapters: films.map((f) => ({
+			type: 'film' as const,
+			title: f.data.title,
+			description: f.data.description,
+			youtubeId: f.data.youtubeId,
+			cover: f.data.cover,
+		})),
 	},
 	{
 		key: '02',
 		title: '스냅',
 		titleEn: 'SNAP',
 		meta: `${people.length} PEOPLE`,
-		description: '일곱 명의 인물을 담은 스냅 기록.',
-		href: withBase('/snap/'),
 		color: 'var(--color-spine-2)',
 		image: snapCover,
+		chapters: people.map((p) => ({
+			type: 'person' as const,
+			name: p.data.name,
+			images: galleriesBySlug.get(p.data.slug) ?? [],
+			href: withBase(`/snap/#${p.data.slug}`),
+		})),
 	},
 	{
 		key: '03',
 		title: '연구',
 		titleEn: 'RESEARCH',
 		meta: `${research.length} PAPER`,
-		description: '아스펙트 기반 감정 분석을 중심으로 진행한 연구.',
-		href: withBase('/research/'),
 		color: 'var(--color-spine-3)',
+		chapters: research.map((r) => ({
+			type: 'research' as const,
+			title: r.data.title,
+			authors: r.data.authors,
+			venue: r.data.venue,
+			date: r.data.date,
+			abstract: r.data.abstract,
+			pdf: withBase(r.data.pdf),
+			doi: r.data.doi,
+		})),
 	},
 	{
 		key: '04',
 		title: '작곡',
 		titleEn: 'COMPOSITION',
 		meta: `${compositions.length} TRACKS`,
-		description: "'좌니뭐하니'라는 이름으로 만든 곡들.",
-		href: withBase('/composition/'),
 		color: 'var(--color-spine-4)',
 		image: compositionCover,
+		chapters: compositions.map((c) =>
+			c.data.type === 'audio'
+				? {
+						type: 'audio' as const,
+						title: c.data.title,
+						subtitle: c.data.subtitle,
+						description: c.data.description,
+						src: withBase(c.data.audio ?? ''),
+					}
+				: {
+						type: 'video-track' as const,
+						title: c.data.title,
+						description: c.data.description,
+						youtubeId: c.data.youtubeId,
+						cover: c.data.cover!,
+					},
+		),
 	},
 ];
 ---

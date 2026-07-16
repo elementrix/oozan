@@ -1,0 +1,135 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+	name: string;
+	images: ImageMetadata[];
+	href: string;
+	index: number;
+	total: number;
+}
+
+const { name, images, href, index, total } = Astro.props;
+const hero = images[0];
+const strip = images.slice(1, 5);
+---
+
+<section class="chapter">
+	<div class="chapter__media">
+		{
+			hero && (
+				<Image
+					src={hero}
+					alt={name}
+					class="chapter__poster"
+					widths={[480, 900, 1400]}
+					sizes="(max-width: 900px) 100vw, 60vw"
+					loading="lazy"
+				/>
+			)
+		}
+		<div class="chapter__scrim" aria-hidden="true"></div>
+	</div>
+	<div class="chapter__body">
+		<p class="chapter__index">
+			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+		</p>
+		<h4 class="chapter__title">{name}</h4>
+		{
+			strip.length > 0 && (
+				<div class="chapter__strip">
+					{strip.map((img) => (
+						<Image src={img} alt={name} class="chapter__strip-img" widths={[200, 320]} sizes="120px" loading="lazy" />
+					))}
+				</div>
+			)
+		}
+		<a class="chapter__link" href={href}>
+			전체 갤러리 보기 →
+		</a>
+	</div>
+</section>
+
+<style>
+	.chapter {
+		position: relative;
+		height: 100%;
+		width: 100%;
+		scroll-snap-align: start;
+		scroll-snap-stop: always;
+		overflow: hidden;
+	}
+
+	.chapter__media {
+		position: absolute;
+		inset: 0;
+		background: #000;
+	}
+
+	.chapter__media :global(.chapter__poster) {
+		position: absolute;
+		inset: 0;
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.chapter__scrim {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.2) 100%);
+	}
+
+	.chapter__body {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		max-width: 640px;
+		padding: clamp(1.5rem, 3vw, 3rem);
+	}
+
+	.chapter__index {
+		font-size: 0.78rem;
+		letter-spacing: 0.14em;
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.chapter__title {
+		margin-top: 0.5rem;
+		font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+		font-weight: 800;
+		letter-spacing: -0.02em;
+		color: #fff;
+	}
+
+	.chapter__strip {
+		display: flex;
+		gap: 0.5rem;
+		margin-top: 1.25rem;
+	}
+
+	.chapter__strip :global(.chapter__strip-img) {
+		width: 4.5rem;
+		height: 4.5rem;
+		object-fit: cover;
+		flex-shrink: 0;
+	}
+
+	.chapter__link {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4em;
+		margin-top: 1.25rem;
+		font-weight: 700;
+		font-size: 0.85rem;
+		color: #fff;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+		padding-bottom: 0.15rem;
+	}
+
+	.chapter__link:hover {
+		border-color: #fff;
+	}
+</style>

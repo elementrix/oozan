@@ -1,16 +1,35 @@
 ---
 import { Image } from 'astro:assets';
 import type { ImageMetadata } from 'astro';
+import VideoChapter from './shelf/VideoChapter.astro';
+import PersonChapter from './shelf/PersonChapter.astro';
+import ResearchChapter from './shelf/ResearchChapter.astro';
+import AudioChapter from './shelf/AudioChapter.astro';
+
+export type Chapter =
+	| { type: 'film'; title: string; description?: string; youtubeId?: string; cover: ImageMetadata }
+	| { type: 'person'; name: string; images: ImageMetadata[]; href: string }
+	| {
+			type: 'research';
+			title: string;
+			authors: string;
+			venue: string;
+			date: string;
+			abstract: string;
+			pdf: string;
+			doi?: string;
+	  }
+	| { type: 'audio'; title: string; subtitle?: string; description?: string; src: string }
+	| { type: 'video-track'; title: string; description?: string; youtubeId?: string; cover: ImageMetadata };
 
 interface Panel {
 	key: string;
 	title: string;
 	titleEn: string;
 	meta: string;
-	description: string;
-	href: string;
 	color: string;
 	image?: ImageMetadata;
+	chapters: Chapter[];
 }
 
 interface Props {
@@ -54,16 +73,53 @@ const total = String(panels.length).padStart(2, '0');
 						{p.key} — {p.titleEn}
 					</span>
 
-					<div class="shelf__content">
-						<p class="shelf__eyebrow">
-							{p.key} / {total} — {p.titleEn}
-						</p>
-						<h3 class="shelf__title">{p.title}</h3>
-						<p class="shelf__meta">{p.meta}</p>
-						<p class="shelf__desc">{p.description}</p>
-						<a class="shelf__link" href={p.href}>
-							보러 가기 →
-						</a>
+					<div class="shelf__chapters">
+						{p.chapters.map((ch, ci) => {
+							const index = ci + 1;
+							const chTotal = p.chapters.length;
+							if (ch.type === 'film' || ch.type === 'video-track') {
+								return (
+									<VideoChapter
+										title={ch.title}
+										description={ch.description}
+										youtubeId={ch.youtubeId}
+										cover={ch.cover}
+										index={index}
+										total={chTotal}
+									/>
+								);
+							}
+							if (ch.type === 'person') {
+								return (
+									<PersonChapter name={ch.name} images={ch.images} href={ch.href} index={index} total={chTotal} />
+								);
+							}
+							if (ch.type === 'research') {
+								return (
+									<ResearchChapter
+										title={ch.title}
+										authors={ch.authors}
+										venue={ch.venue}
+										date={ch.date}
+										abstract={ch.abstract}
+										pdf={ch.pdf}
+										doi={ch.doi}
+										index={index}
+										total={chTotal}
+									/>
+								);
+							}
+							return (
+								<AudioChapter
+									title={ch.title}
+									subtitle={ch.subtitle}
+									description={ch.description}
+									src={ch.src}
+									index={index}
+									total={chTotal}
+								/>
+							);
+						})}
 					</div>
 				</div>
 			))
@@ -161,74 +217,27 @@ const total = String(panels.length).padStart(2, '0');
 		pointer-events: none;
 	}
 
-	.shelf__content {
+	.shelf__chapters {
 		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		max-width: 640px;
-		padding: clamp(1.5rem, 3vw, 3rem);
+		inset: 0;
+		overflow-y: auto;
+		scroll-snap-type: y mandatory;
 		opacity: 0;
-		transform: translateY(16px);
-		transition:
-			opacity 0.35s ease,
-			transform 0.35s ease;
+		transition: opacity 0.3s ease;
+		scrollbar-width: none;
 	}
 
-	.shelf__panel[aria-expanded='true'] .shelf__content {
+	.shelf__chapters::-webkit-scrollbar {
+		display: none;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__chapters {
 		opacity: 1;
-		transform: none;
-		transition-delay: 0.2s;
+		transition-delay: 0.25s;
 	}
 
-	.shelf__panel:not([aria-expanded='true']) .shelf__content {
+	.shelf__panel:not([aria-expanded='true']) .shelf__chapters {
 		pointer-events: none;
-	}
-
-	.shelf__eyebrow {
-		font-size: 0.78rem;
-		letter-spacing: 0.14em;
-		text-transform: uppercase;
-		color: rgba(255, 255, 255, 0.75);
-	}
-
-	.shelf__title {
-		margin-top: 0.5rem;
-		font-size: clamp(2rem, 4.5vw, 3.5rem);
-		font-weight: 800;
-		letter-spacing: -0.02em;
-		line-height: 1;
-		color: #fff;
-	}
-
-	.shelf__meta {
-		margin-top: 0.6rem;
-		font-size: 0.8rem;
-		letter-spacing: 0.04em;
-		color: rgba(255, 255, 255, 0.7);
-	}
-
-	.shelf__desc {
-		margin-top: 1rem;
-		font-size: 0.95rem;
-		line-height: 1.65;
-		color: rgba(255, 255, 255, 0.9);
-	}
-
-	.shelf__link {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.4em;
-		margin-top: 1.5rem;
-		font-weight: 700;
-		font-size: 0.9rem;
-		color: #fff;
-		border-bottom: 1px solid rgba(255, 255, 255, 0.45);
-		padding-bottom: 0.15rem;
-	}
-
-	.shelf__link:hover {
-		border-color: #fff;
 	}
 
 	.shelf__controls {
@@ -263,16 +272,31 @@ const total = String(panels.length).padStart(2, '0');
 		.shelf__panel {
 			flex-basis: 52px;
 		}
-		.shelf__title {
-			font-size: clamp(1.6rem, 8vw, 2.5rem);
-		}
-		.shelf__desc {
-			display: none;
-		}
 	}
 </style>
 
 <script>
+	function playChapterVideo(el: HTMLElement) {
+		if (el.dataset.playing === 'true') return;
+		const youtubeId = el.dataset.youtube;
+		if (!youtubeId) return;
+		const media = el.querySelector('.chapter__media');
+		if (!media) return;
+		const iframe = document.createElement('iframe');
+		iframe.className = 'chapter__iframe';
+		iframe.src = `https://www.youtube-nocookie.com/embed/${youtubeId}?autoplay=1&mute=1&controls=1&loop=1&playlist=${youtubeId}&rel=0`;
+		iframe.title = el.dataset.title ?? 'video';
+		iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
+		media.appendChild(iframe);
+		el.dataset.playing = 'true';
+	}
+
+	function stopChapterVideo(el: HTMLElement) {
+		if (el.dataset.playing !== 'true') return;
+		el.querySelector('.chapter__iframe')?.remove();
+		el.dataset.playing = 'false';
+	}
+
 	function initShelf(shelf: HTMLElement) {
 		const panels = Array.from(shelf.querySelectorAll<HTMLElement>('[data-panel]'));
 		const wrapper = shelf.closest<HTMLElement>('.shelf-wrap');
@@ -282,14 +306,51 @@ const total = String(panels.length).padStart(2, '0');
 		let active = panels.findIndex((p) => p.getAttribute('aria-expanded') === 'true');
 		if (active < 0) active = 0;
 
+		panels.forEach((panel) => {
+			const chaptersEl = panel.querySelector<HTMLElement>('.shelf__chapters');
+			if (!chaptersEl) return;
+			const videoChapters = Array.from(chaptersEl.querySelectorAll<HTMLElement>('[data-video-chapter]'));
+			if (!videoChapters.length) return;
+
+			const observer = new IntersectionObserver(
+				(entries) => {
+					if (panel.getAttribute('aria-expanded') !== 'true') return;
+					entries.forEach((entry) => {
+						const el = entry.target as HTMLElement;
+						if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
+							playChapterVideo(el);
+						} else {
+							stopChapterVideo(el);
+						}
+					});
+				},
+				{ root: chaptersEl, threshold: [0, 0.6, 1] },
+			);
+
+			videoChapters.forEach((el) => observer.observe(el));
+		});
+
 		function render() {
 			panels.forEach((p, i) => p.setAttribute('aria-expanded', String(i === active)));
 			if (currentLabel) currentLabel.textContent = String(active + 1).padStart(2, '0');
 		}
 
 		function activate(i: number) {
+			const prevPanel = panels[active];
 			active = (i + panels.length) % panels.length;
 			render();
+			const nextPanel = panels[active];
+			if (prevPanel && prevPanel !== nextPanel) {
+				prevPanel
+					.querySelectorAll<HTMLElement>('[data-video-chapter][data-playing="true"]')
+					.forEach(stopChapterVideo);
+				const prevChapters = prevPanel.querySelector<HTMLElement>('.shelf__chapters');
+				if (prevChapters) prevChapters.scrollTop = 0;
+			}
+			requestAnimationFrame(() => {
+				const firstChapter = nextPanel.querySelector<HTMLElement>('[data-video-chapter]');
+				if (firstChapter) playChapterVideo(firstChapter);
+			});
 		}
 
 		panels.forEach((p, i) => {
@@ -308,6 +369,12 @@ const total = String(panels.length).padStart(2, '0');
 
 		prevBtn?.addEventListener('click', () => activate(active - 1));
 		nextBtn?.addEventListener('click', () => activate(active + 1));
+
+		// autoplay the initially-expanded panel's first video chapter
+		requestAnimationFrame(() => {
+			const firstChapter = panels[active]?.querySelector<HTMLElement>('[data-video-chapter]');
+			if (firstChapter) playChapterVideo(firstChapter);
+		});
 	}
 
 	document.querySelectorAll<HTMLElement>('[data-shelf]').forEach(initShelf);
