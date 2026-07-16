@@ -32,40 +32,42 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		}
 	</div>
 
-	{
-		images.length > 1 && (
-			<div class="chapter__hcontrols">
-				<button class="chapter__hnav chapter__hnav--prev" type="button" data-h-prev aria-label="이전 사진">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</button>
-				<div class="chapter__hdots" data-h-dots aria-hidden="true">
-					{images.map((_, i) => (
-						<button
-							class="chapter__hdot"
-							type="button"
-							data-h-dot-index={i}
-							aria-current={i === 0 ? 'true' : 'false'}
-							aria-label={`사진 ${i + 1}`}
-						/>
-					))}
-				</div>
-				<button class="chapter__hnav chapter__hnav--next" type="button" data-h-next aria-label="다음 사진">
-					<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</button>
-			</div>
-		)
-	}
-
 	<div class="chapter__scrim" aria-hidden="true"></div>
 	<div class="chapter__body">
-		<p class="chapter__index">
-			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
-		</p>
-		<h4 class="chapter__title">{name}</h4>
+		<div class="chapter__text">
+			<p class="chapter__index">
+				{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+			</p>
+			<h4 class="chapter__title">{name}</h4>
+		</div>
+
+		{
+			images.length > 1 && (
+				<div class="chapter__hcontrols">
+					<button class="chapter__hnav chapter__hnav--prev" type="button" data-h-prev aria-label="이전 사진">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M15 5l-7 7 7 7" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					<div class="chapter__hdots" data-h-dots aria-hidden="true">
+						{images.map((_, i) => (
+							<button
+								class="chapter__hdot"
+								type="button"
+								data-h-dot-index={i}
+								aria-current={i === 0 ? 'true' : 'false'}
+								aria-label={`사진 ${i + 1}`}
+							/>
+						))}
+					</div>
+					<button class="chapter__hnav chapter__hnav--next" type="button" data-h-next aria-label="다음 사진">
+						<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+				</div>
+			)
+		}
 	</div>
 </section>
 
@@ -110,10 +112,6 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 	}
 
 	.chapter__hcontrols {
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		transform: translate(-50%, -50%);
 		z-index: 6;
 		display: flex;
 		align-items: center;
@@ -151,12 +149,21 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 		left: 0;
 		right: 0;
 		bottom: 0;
-		max-width: 640px;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 1.25rem;
 		padding: clamp(1.5rem, 3vw, 3rem);
 		pointer-events: none;
 	}
 
-	.chapter__body > * {
+	.chapter__text {
+		align-self: flex-start;
+		max-width: 640px;
+	}
+
+	.chapter__text,
+	.chapter__hcontrols {
 		pointer-events: auto;
 	}
 
