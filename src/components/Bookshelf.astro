@@ -121,6 +121,20 @@ const total = String(panels.length).padStart(2, '0');
 							);
 						})}
 					</div>
+
+					{p.chapters.length > 1 && (
+						<div class="shelf__dots" data-shelf-dots aria-hidden="true">
+							{p.chapters.map((_, ci) => (
+								<button
+									class="shelf__dot"
+									type="button"
+									data-dot-index={ci}
+									aria-current={ci === 0 ? 'true' : 'false'}
+									aria-label={`챕터 ${ci + 1}`}
+								/>
+							))}
+						</div>
+					)}
 				</div>
 			))
 		}
@@ -220,15 +234,9 @@ const total = String(panels.length).padStart(2, '0');
 	.shelf__chapters {
 		position: absolute;
 		inset: 0;
-		overflow-y: auto;
-		scroll-snap-type: y mandatory;
+		overflow-y: hidden;
 		opacity: 0;
 		transition: opacity 0.3s ease;
-		scrollbar-width: none;
-	}
-
-	.shelf__chapters::-webkit-scrollbar {
-		display: none;
 	}
 
 	.shelf__panel[aria-expanded='true'] .shelf__chapters {
@@ -238,6 +246,50 @@ const total = String(panels.length).padStart(2, '0');
 
 	.shelf__panel:not([aria-expanded='true']) .shelf__chapters {
 		pointer-events: none;
+	}
+
+	.shelf__dots {
+		position: absolute;
+		top: 50%;
+		right: clamp(1rem, 2vw, 2.25rem);
+		transform: translateY(-50%);
+		z-index: 5;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.shelf__panel[aria-expanded='true'] .shelf__dots {
+		opacity: 1;
+		transition-delay: 0.25s;
+	}
+
+	.shelf__panel:not([aria-expanded='true']) .shelf__dots {
+		pointer-events: none;
+	}
+
+	.shelf__dot {
+		width: 3px;
+		height: 14px;
+		padding: 0;
+		border: 0;
+		background: rgba(255, 255, 255, 0.4);
+		cursor: pointer;
+		transition:
+			height 0.25s ease,
+			background 0.25s ease;
+	}
+
+	.shelf__dot:hover {
+		background: rgba(255, 255, 255, 0.7);
+	}
+
+	.shelf__dot[aria-current='true'] {
+		height: 26px;
+		background: #fff;
 	}
 
 	.shelf__controls {
@@ -297,6 +349,90 @@ const total = String(panels.length).padStart(2, '0');
 		el.dataset.playing = 'false';
 	}
 
+	// drives paging within one panel's chapter stack: wheel/touch nudge -> snap to next/prev chapter
+	function initChapterPaging(panel: HTMLElement) {
+		const chaptersEl = panel.querySelector<HTMLElement>('.shelf__chapters');
+		if (!chaptersEl) return null;
+		const chapters = Array.from(chaptersEl.children) as HTMLElement[];
+		const dots = Array.from(panel.querySelectorAll<HTMLButtonElement>('.shelf__dot'));
+		let current = 0;
+		let cooling = false;
+
+		function updateDots() {
+			dots.forEach((d, i) => d.setAttribute('aria-current', String(i === current)));
+		}
+
+		function playCurrentIfVideo() {
+			const el = chapters[current];
+			if (el?.hasAttribute('data-video-chapter')) playChapterVideo(el);
+		}
+
+		function goTo(index: number) {
+			index = Math.max(0, Math.min(chapters.length - 1, index));
+			if (index === current) return;
+			const leaving = chapters[current];
+			if (leaving?.hasAttribute('data-video-chapter')) stopChapterVideo(leaving);
+			current = index;
+			chaptersEl!.scrollTo({ top: chapters[current].offsetTop, behavior: 'smooth' });
+			updateDots();
+			playCurrentIfVideo();
+		}
+
+		chaptersEl.addEventListener(
+			'wheel',
+			(e) => {
+				if (panel.getAttribute('aria-expanded') !== 'true') return;
+				if (Math.abs(e.deltaY) < 4) return;
+				e.preventDefault();
+				if (cooling) return;
+				cooling = true;
+				goTo(current + (e.deltaY > 0 ? 1 : -1));
+				setTimeout(() => (cooling = false), 650);
+			},
+			{ passive: false },
+		);
+
+		let touchStartY: number | null = null;
+		chaptersEl.addEventListener(
+			'touchstart',
+			(e) => {
+				touchStartY = e.touches[0]?.clientY ?? null;
+			},
+			{ passive: true },
+		);
+		chaptersEl.addEventListener(
+			'touchend',
+			(e) => {
+				if (touchStartY === null || cooling) return;
+				const dy = touchStartY - (e.changedTouches[0]?.clientY ?? touchStartY);
+				touchStartY = null;
+				if (Math.abs(dy) < 28) return;
+				cooling = true;
+				goTo(current + (dy > 0 ? 1 : -1));
+				setTimeout(() => (cooling = false), 650);
+			},
+			{ passive: true },
+		);
+
+		dots.forEach((dot, i) => {
+			dot.addEventListener('click', (e) => {
+				e.stopPropagation();
+				goTo(i);
+			});
+		});
+
+		return {
+			reset() {
+				const playing = chapters[current];
+				if (playing?.hasAttribute('data-video-chapter')) stopChapterVideo(playing);
+				current = 0;
+				chaptersEl!.scrollTop = 0;
+				updateDots();
+			},
+			playFirst: playCurrentIfVideo,
+		};
+	}
+
 	function initShelf(shelf: HTMLElement) {
 		const panels = Array.from(shelf.querySelectorAll<HTMLElement>('[data-panel]'));
 		const wrapper = shelf.closest<HTMLElement>('.shelf-wrap');
@@ -306,29 +442,7 @@ const total = String(panels.length).padStart(2, '0');
 		let active = panels.findIndex((p) => p.getAttribute('aria-expanded') === 'true');
 		if (active < 0) active = 0;
 
-		panels.forEach((panel) => {
-			const chaptersEl = panel.querySelector<HTMLElement>('.shelf__chapters');
-			if (!chaptersEl) return;
-			const videoChapters = Array.from(chaptersEl.querySelectorAll<HTMLElement>('[data-video-chapter]'));
-			if (!videoChapters.length) return;
-
-			const observer = new IntersectionObserver(
-				(entries) => {
-					if (panel.getAttribute('aria-expanded') !== 'true') return;
-					entries.forEach((entry) => {
-						const el = entry.target as HTMLElement;
-						if (entry.isIntersecting && entry.intersectionRatio >= 0.6) {
-							playChapterVideo(el);
-						} else {
-							stopChapterVideo(el);
-						}
-					});
-				},
-				{ root: chaptersEl, threshold: [0, 0.6, 1] },
-			);
-
-			videoChapters.forEach((el) => observer.observe(el));
-		});
+		const pagers = panels.map((panel) => initChapterPaging(panel));
 
 		function render() {
 			panels.forEach((p, i) => p.setAttribute('aria-expanded', String(i === active)));
@@ -336,21 +450,11 @@ const total = String(panels.length).padStart(2, '0');
 		}
 
 		function activate(i: number) {
-			const prevPanel = panels[active];
+			const prevIndex = active;
 			active = (i + panels.length) % panels.length;
 			render();
-			const nextPanel = panels[active];
-			if (prevPanel && prevPanel !== nextPanel) {
-				prevPanel
-					.querySelectorAll<HTMLElement>('[data-video-chapter][data-playing="true"]')
-					.forEach(stopChapterVideo);
-				const prevChapters = prevPanel.querySelector<HTMLElement>('.shelf__chapters');
-				if (prevChapters) prevChapters.scrollTop = 0;
-			}
-			requestAnimationFrame(() => {
-				const firstChapter = nextPanel.querySelector<HTMLElement>('[data-video-chapter]');
-				if (firstChapter) playChapterVideo(firstChapter);
-			});
+			if (prevIndex !== active) pagers[prevIndex]?.reset();
+			requestAnimationFrame(() => pagers[active]?.playFirst());
 		}
 
 		panels.forEach((p, i) => {
@@ -370,11 +474,7 @@ const total = String(panels.length).padStart(2, '0');
 		prevBtn?.addEventListener('click', () => activate(active - 1));
 		nextBtn?.addEventListener('click', () => activate(active + 1));
 
-		// autoplay the initially-expanded panel's first video chapter
-		requestAnimationFrame(() => {
-			const firstChapter = panels[active]?.querySelector<HTMLElement>('[data-video-chapter]');
-			if (firstChapter) playChapterVideo(firstChapter);
-		});
+		requestAnimationFrame(() => pagers[active]?.playFirst());
 	}
 
 	document.querySelectorAll<HTMLElement>('[data-shelf]').forEach(initShelf);
