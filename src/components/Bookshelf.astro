@@ -175,9 +175,11 @@ const { panels } = Astro.props;
 		border: 0;
 		padding: 0;
 		text-align: left;
-		/* width is set in px by JS so this always transitions px -> px (mixed
-		   units like 84px -> 0% can't interpolate smoothly and just jump) */
-		transition: width 0.75s cubic-bezier(0.42, 0, 1, 1);
+		/* width/height are set in px by JS so this always transitions px -> px
+		   (mixed units like 84px -> 0% can't interpolate smoothly and just jump) */
+		transition:
+			width 0.75s cubic-bezier(0.42, 0, 1, 1),
+			height 0.75s cubic-bezier(0.42, 0, 1, 1);
 	}
 
 	.shelf__panel[aria-expanded='true'] {
@@ -305,8 +307,28 @@ const { panels } = Astro.props;
 	}
 
 	@media (max-width: 720px) {
+		/* on mobile, panels stack like books lying flat at the bottom instead of
+		   standing as spines along the side — the active panel gets the full
+		   width so the horizontal view isn't squeezed by 3 side strips */
 		.shelf {
-			--spine-w: 52px;
+			--spine-h: 56px;
+			flex-direction: column;
+		}
+
+		.shelf__panel {
+			width: 100%;
+			/* height set by JS, mirroring how width works on desktop */
+		}
+
+		.shelf__spine-label {
+			top: 50%;
+			left: 1.25rem;
+			right: 1.25rem;
+			justify-content: flex-start;
+			writing-mode: horizontal-tb;
+			text-orientation: initial;
+			transform: translateY(-50%);
+			font-size: 0.85rem;
 		}
 
 		/* panels without a nested horizontal swipe (everything but snap's photo
@@ -359,26 +381,12 @@ const { panels } = Astro.props;
 		iframe.allow = 'accelerometer; autoplay; encrypted-media; gyroscope; picture-in-picture';
 		media.appendChild(iframe);
 		el.dataset.playing = 'true';
-
-		// YouTube shows its own transient title/play-pause overlay for the
-		// first few seconds after load — keep the scrollcatch passive during
-		// that window so it stays clickable, then engage it so wheel/touch
-		// reliably reaches the chapter pager instead of the iframe
-		const scrollcatch = el.querySelector<HTMLElement>('[data-scrollcatch]');
-		if (scrollcatch) {
-			scrollcatch.dataset.active = 'false';
-			setTimeout(() => {
-				if (el.dataset.playing === 'true') scrollcatch.dataset.active = 'true';
-			}, 3000);
-		}
 	}
 
 	function stopChapterVideo(el: HTMLElement) {
 		if (el.dataset.playing !== 'true') return;
 		el.querySelector('.chapter__iframe')?.remove();
 		el.dataset.playing = 'false';
-		const scrollcatch = el.querySelector<HTMLElement>('[data-scrollcatch]');
-		if (scrollcatch) scrollcatch.dataset.active = 'false';
 		const muteBtn = el.querySelector<HTMLButtonElement>('[data-mute-toggle]');
 		if (muteBtn) {
 			muteBtn.dataset.muted = 'true';
@@ -517,18 +525,32 @@ const { panels } = Astro.props;
 
 		const pagers = panels.map((panel) => initChapterPaging(panel));
 
-		// widths are set explicitly in px (not via flex-grow/flex-basis %) so the
-		// CSS transition always animates px -> px, which is what actually
-		// interpolates smoothly — mixed units (e.g. 84px -> 0%) just jump.
+		// widths (or, on mobile, heights) are set explicitly in px (not via
+		// flex-grow/flex-basis %) so the CSS transition always animates px -> px,
+		// which is what actually interpolates smoothly — mixed units (e.g.
+		// 84px -> 0%) just jump.
 		function layout(animate: boolean) {
-			const spineW = parseFloat(getComputedStyle(shelf).getPropertyValue('--spine-w')) || 84;
+			const mobile = window.matchMedia('(max-width: 720px)').matches;
 			const gap = 2;
-			const collapsedTotal = (panels.length - 1) * spineW + (panels.length - 1) * gap;
-			const activeWidth = shelf.clientWidth - collapsedTotal;
-			panels.forEach((p, i) => {
-				if (!animate) p.style.transition = 'none';
-				p.style.width = `${i === active ? activeWidth : spineW}px`;
-			});
+			if (mobile) {
+				const spineH = parseFloat(getComputedStyle(shelf).getPropertyValue('--spine-h')) || 56;
+				const collapsedTotal = (panels.length - 1) * spineH + (panels.length - 1) * gap;
+				const activeHeight = shelf.clientHeight - collapsedTotal;
+				panels.forEach((p, i) => {
+					if (!animate) p.style.transition = 'none';
+					p.style.width = '';
+					p.style.height = `${i === active ? activeHeight : spineH}px`;
+				});
+			} else {
+				const spineW = parseFloat(getComputedStyle(shelf).getPropertyValue('--spine-w')) || 84;
+				const collapsedTotal = (panels.length - 1) * spineW + (panels.length - 1) * gap;
+				const activeWidth = shelf.clientWidth - collapsedTotal;
+				panels.forEach((p, i) => {
+					if (!animate) p.style.transition = 'none';
+					p.style.height = '';
+					p.style.width = `${i === active ? activeWidth : spineW}px`;
+				});
+			}
 			if (!animate) {
 				void shelf.offsetHeight;
 				panels.forEach((p) => {

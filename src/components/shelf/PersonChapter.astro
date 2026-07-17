@@ -326,14 +326,15 @@ const padded = images.length > 1 ? [images[images.length - 1], ...images, images
 			resizeTimer = setTimeout(() => position(false), 100);
 		});
 
-		// the panel starts collapsed (84px wide), so the initial layout above is measured
-		// against the wrong width — recompute once it finishes animating open
+		// the panel starts collapsed (a thin strip — width on desktop, height on
+		// mobile), so the initial layout above is measured against the wrong
+		// size — recompute once it finishes animating open
 		const panel = gallery.closest<HTMLElement>('.shelf__panel');
 		panel?.addEventListener('transitionend', (e) => {
 			// transitionend bubbles — without this check, any of the 13 photo
 			// slides finishing their own width transition would also trigger
 			// this and force-snap the in-progress photo animation early
-			if (e.target === panel && e.propertyName === 'width') position(false);
+			if (e.target === panel && (e.propertyName === 'width' || e.propertyName === 'height')) position(false);
 		});
 
 		function guardedStep(dir: number) {

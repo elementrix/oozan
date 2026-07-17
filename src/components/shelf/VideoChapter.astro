@@ -98,18 +98,17 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		border: 0;
 	}
 
+	/* only the bottom band (gradient + meta info) captures wheel/touch so
+	   chapter paging still works while hovering the video — the rest of the
+	   frame is never covered, so YouTube's own play/pause overlay and any
+	   other in-video UI stay clickable at all times, not just briefly */
 	.chapter__scrollcatch {
 		position: absolute;
-		inset: 0;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 35%;
 		z-index: 3;
-		/* off at first so YouTube's transient title/play-pause overlay stays
-		   clickable; JS engages this a few seconds after playback starts so
-		   wheel/touch reliably reaches the chapter pager instead of the iframe */
-		pointer-events: none;
-	}
-
-	.chapter__scrollcatch[data-active='true'] {
-		pointer-events: auto;
 	}
 
 	.chapter__scrim {
