@@ -32,7 +32,6 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 			sizes="(max-width: 900px) 100vw, 60vw"
 			loading="lazy"
 		/>
-		{!isPlaceholder && <div class="chapter__scrollcatch" data-scrollcatch aria-hidden="true" />}
 		<div class="chapter__scrim" aria-hidden="true"></div>
 	</div>
 	{isPlaceholder && <span class="chapter__badge">영상 업로드 예정</span>}
@@ -76,16 +75,29 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 </section>
 
 <style>
+	/* video and meta info are real stacked blocks, not video-with-text-overlaid-
+	   via-absolute-positioning — a cross-origin YouTube iframe swallows wheel/
+	   touch input it receives, so no invisible catcher div on top of it can
+	   ever be both scrollable *and* clickable at once. Splitting them into
+	   actual non-overlapping regions sidesteps the conflict entirely: the
+	   video is always fully clickable (nothing sits on top of it), and the
+	   meta footer below it — plain DOM, not iframe — always bubbles wheel/
+	   touch to the chapter pager with no tricks needed. */
 	.chapter {
 		position: relative;
 		height: 100%;
 		width: 100%;
 		overflow: hidden;
+		display: flex;
+		flex-direction: column;
+		background: #000;
 	}
 
 	.chapter__media {
-		position: absolute;
-		inset: 0;
+		position: relative;
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
 	}
 
 	.chapter__media :global(.chapter__poster),
@@ -98,24 +110,14 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		border: 0;
 	}
 
-	/* only the bottom band (gradient + meta info) captures wheel/touch so
-	   chapter paging still works while hovering the video — the rest of the
-	   frame is never covered, so YouTube's own play/pause overlay and any
-	   other in-video UI stay clickable at all times, not just briefly */
-	.chapter__scrollcatch {
+	.chapter__scrim {
 		position: absolute;
 		left: 0;
 		right: 0;
 		bottom: 0;
-		height: 35%;
-		z-index: 3;
-	}
-
-	.chapter__scrim {
-		position: absolute;
-		inset: 0;
+		height: 40%;
 		z-index: 4;
-		background: linear-gradient(0deg, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.05) 40%, rgba(0, 0, 0, 0.25) 100%);
+		background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
 		pointer-events: none;
 	}
 
@@ -166,17 +168,15 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 	}
 
 	.chapter__body {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		z-index: 5;
+		position: relative;
+		flex: 0 0 auto;
+		min-height: clamp(140px, 26vh, 220px);
 		display: flex;
 		justify-content: space-between;
 		align-items: flex-end;
 		gap: clamp(1.5rem, 4vw, 3rem);
 		padding: clamp(1.5rem, 3vw, 3rem);
-		pointer-events: none;
+		background: #000;
 	}
 
 	.chapter__main {
