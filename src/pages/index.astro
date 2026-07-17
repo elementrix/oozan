@@ -7,18 +7,15 @@ import { withBase } from '../lib/url';
 
 import filmsCover from '../assets/films/premium-project.jpg';
 import snapCover from '../assets/snap/lee-eunmin/01.jpg';
-import compositionCover from '../assets/composition/geuriun-norae.jpg';
 
-const [filmsRaw, researchRaw, compositionsRaw, peopleRaw] = await Promise.all([
+const [filmsRaw, researchRaw, peopleRaw] = await Promise.all([
 	getCollection('films'),
 	getCollection('research'),
-	getCollection('compositions'),
 	getCollection('people'),
 ]);
 
 const films = filmsRaw.sort((a, b) => a.data.order - b.data.order);
 const research = researchRaw.sort((a, b) => a.data.order - b.data.order);
-const compositions = compositionsRaw.sort((a, b) => a.data.order - b.data.order);
 const people = peopleRaw.sort((a, b) => a.data.order - b.data.order);
 
 const galleryModules = import.meta.glob<{ default: ImageMetadata }>('/src/assets/snap/*/*.jpg', {
@@ -69,32 +66,6 @@ const panels = [
 	},
 	{
 		key: '03',
-		title: '작곡',
-		titleEn: 'COMPOSITION',
-		meta: `${compositions.length} TRACKS`,
-		color: 'var(--color-spine-4)',
-		image: compositionCover,
-		chapters: compositions.map((c) =>
-			c.data.type === 'audio'
-				? {
-						type: 'audio' as const,
-						title: c.data.title,
-						subtitle: c.data.subtitle,
-						description: c.data.description,
-						src: withBase(c.data.audio ?? ''),
-						cover: c.data.cover,
-					}
-				: {
-						type: 'video-track' as const,
-						title: c.data.title,
-						description: c.data.description,
-						youtubeId: c.data.youtubeId,
-						cover: c.data.cover!,
-					},
-		),
-	},
-	{
-		key: '04',
 		title: '소개',
 		titleEn: 'ABOUT',
 		meta: 'PROFILE',
