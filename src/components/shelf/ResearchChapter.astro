@@ -20,15 +20,17 @@ const { title, authors, venue, date, abstract, pdf, doi, index, total } = Astro.
 			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
 		</p>
 		<h4 class="chapter__title">{title}</h4>
-		<div class="chapter__meta">
-			<span><b>Authors</b>{authors}</span>
-			<span><b>Published in</b>{venue}</span>
-			<span><b>Date</b>{date}</span>
-		</div>
+		<p class="chapter__meta">
+			<span>{authors}</span>
+			<span>{venue}</span>
+			<span>{date}</span>
+		</p>
 		<p class="chapter__abstract-label">Abstract</p>
 		<p class="chapter__abstract">{abstract}</p>
 		<div class="chapter__actions">
-			<a class="chapter__btn" href={pdf} target="_blank" rel="noopener noreferrer">PDF 보기</a>
+			<a class="chapter__btn" href={pdf} target="_blank" rel="noopener noreferrer">
+				PDF에서 전체 보기
+			</a>
 			{
 				doi && (
 					<a class="chapter__btn" href={doi} target="_blank" rel="noopener noreferrer">
@@ -45,71 +47,82 @@ const { title, authors, venue, date, abstract, pdf, doi, index, total } = Astro.
 		position: relative;
 		height: 100%;
 		width: 100%;
-		overflow-y: auto;
+		overflow: hidden;
 		background: var(--panel-color);
+		display: flex;
+		align-items: center;
 	}
 
 	.chapter__inner {
+		width: 100%;
 		max-width: 640px;
-		padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 3vw, 3rem);
+		padding: clamp(1.25rem, 3.5vw, 3rem);
 	}
 
 	.chapter__index {
-		font-size: 0.78rem;
+		font-size: 0.72rem;
 		letter-spacing: 0.14em;
 		color: rgba(255, 255, 255, 0.75);
 	}
 
 	.chapter__title {
-		margin-top: 0.75rem;
-		font-size: clamp(1.5rem, 3vw, 2.1rem);
+		margin-top: 0.6rem;
+		font-size: clamp(1.15rem, 2.4vw, 1.7rem);
 		font-weight: 800;
 		letter-spacing: -0.015em;
 		line-height: 1.25;
 		color: #fff;
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 3;
+		overflow: hidden;
 	}
 
 	.chapter__meta {
-		margin-top: 1.5rem;
+		margin-top: 0.85rem;
 		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-		font-size: 0.85rem;
-		color: rgba(255, 255, 255, 0.8);
-		border-top: 1px solid rgba(255, 255, 255, 0.2);
-		border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-		padding-block: 0.9rem;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		font-size: 0.78rem;
+		color: rgba(255, 255, 255, 0.7);
 	}
 
-	.chapter__meta span b {
-		display: block;
-		font-size: 0.68rem;
-		text-transform: uppercase;
-		letter-spacing: 0.12em;
-		color: rgba(255, 255, 255, 0.55);
-		margin-bottom: 0.15rem;
+	.chapter__meta span:not(:last-child)::after {
+		content: '·';
+		margin-left: 0.4rem;
+		color: rgba(255, 255, 255, 0.4);
 	}
 
 	.chapter__abstract-label {
-		margin-top: 1.5rem;
-		font-size: 0.72rem;
+		margin-top: 1.1rem;
+		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.14em;
 		color: rgba(255, 255, 255, 0.55);
 	}
 
 	.chapter__abstract {
-		margin-top: 0.6rem;
-		font-size: 0.88rem;
-		line-height: 1.7;
-		color: rgba(255, 255, 255, 0.88);
+		margin-top: 0.5rem;
+		font-size: clamp(0.78rem, 1.1vw, 0.88rem);
+		line-height: 1.6;
+		color: rgba(255, 255, 255, 0.85);
+		display: -webkit-box;
+		-webkit-box-orient: vertical;
+		-webkit-line-clamp: 5;
+		overflow: hidden;
 	}
 
 	.chapter__actions {
-		margin-top: 1.75rem;
+		margin-top: 1.1rem;
 		display: flex;
 		gap: 0.75rem;
 		flex-wrap: wrap;
+	}
+
+	@media (min-width: 900px) {
+		.chapter__abstract {
+			-webkit-line-clamp: 10;
+		}
 	}
 
 	.chapter__btn {
