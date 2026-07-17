@@ -95,20 +95,30 @@ const panels = [
 	},
 	{
 		key: '04',
-		title: '연구',
-		titleEn: 'RESEARCH',
-		meta: `${research.length} PAPER`,
+		title: '소개',
+		titleEn: 'ABOUT',
+		meta: 'PROFILE',
 		color: 'var(--color-spine-3)',
-		chapters: research.map((r) => ({
-			type: 'research' as const,
-			title: r.data.title,
-			authors: r.data.authors,
-			venue: r.data.venue,
-			date: r.data.date,
-			abstract: r.data.abstract,
-			pdf: withBase(r.data.pdf),
-			doi: r.data.doi,
-		})),
+		chapters: [
+			{
+				type: 'about' as const,
+				name: 'Jooan Kim',
+				role: '한국항공대학교 컴퓨터공학 석사',
+				email: 'sgh04069@naver.com',
+				phone: '010-4729-8501',
+				instagram: 'oozan',
+			},
+			...research.map((r) => ({
+				type: 'research' as const,
+				title: r.data.title,
+				authors: r.data.authors,
+				venue: r.data.venue,
+				date: r.data.date,
+				abstract: r.data.abstract,
+				pdf: withBase(r.data.pdf),
+				doi: r.data.doi,
+			})),
+		],
 	},
 ];
 ---

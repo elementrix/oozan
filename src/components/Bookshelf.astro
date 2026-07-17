@@ -5,6 +5,7 @@ import VideoChapter from './shelf/VideoChapter.astro';
 import PersonChapter from './shelf/PersonChapter.astro';
 import ResearchChapter from './shelf/ResearchChapter.astro';
 import AudioChapter from './shelf/AudioChapter.astro';
+import AboutChapter from './shelf/AboutChapter.astro';
 
 export type Chapter =
 	| { type: 'film'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata }
@@ -20,7 +21,8 @@ export type Chapter =
 			doi?: string;
 	  }
 	| { type: 'audio'; title: string; subtitle?: string; description?: string; src: string; cover?: ImageMetadata }
-	| { type: 'video-track'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata };
+	| { type: 'video-track'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata }
+	| { type: 'about'; name: string; role: string; email: string; phone: string; instagram: string };
 
 interface Panel {
 	key: string;
@@ -110,6 +112,19 @@ const { panels } = Astro.props;
 										abstract={ch.abstract}
 										pdf={ch.pdf}
 										doi={ch.doi}
+										index={index}
+										total={chTotal}
+									/>
+								);
+							}
+							if (ch.type === 'about') {
+								return (
+									<AboutChapter
+										name={ch.name}
+										role={ch.role}
+										email={ch.email}
+										phone={ch.phone}
+										instagram={ch.instagram}
 										index={index}
 										total={chTotal}
 									/>
