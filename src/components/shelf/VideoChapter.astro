@@ -33,6 +33,13 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 			loading="lazy"
 		/>
 		<div class="chapter__scrim" aria-hidden="true"></div>
+		{
+			!isPlaceholder && (
+				<div class="chapter__progress" data-progress role="slider" aria-label="재생 위치">
+					<div class="chapter__progress-fill" data-progress-fill />
+				</div>
+			)
+		}
 	</div>
 	{isPlaceholder && <span class="chapter__badge">영상 업로드 예정</span>}
 	{
@@ -119,6 +126,31 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		z-index: 4;
 		background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
 		pointer-events: none;
+	}
+
+	/* a thin, always-clickable seek strip at the base of the video — the only
+	   part of the video frame anything sits on top of, since a timeline is
+	   expected to intercept clicks in its own narrow track */
+	.chapter__progress {
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+		height: 3px;
+		z-index: 5;
+		background: rgba(255, 255, 255, 0.25);
+		cursor: pointer;
+		transition: height 0.15s ease;
+	}
+
+	.chapter__progress:hover {
+		height: 6px;
+	}
+
+	.chapter__progress-fill {
+		height: 100%;
+		width: 0%;
+		background: #fff;
 	}
 
 	.chapter__badge {
