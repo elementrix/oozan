@@ -82,6 +82,7 @@ const panels = [
 						subtitle: c.data.subtitle,
 						description: c.data.description,
 						src: withBase(c.data.audio ?? ''),
+						cover: c.data.cover,
 					}
 				: {
 						type: 'video-track' as const,

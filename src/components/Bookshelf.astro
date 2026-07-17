@@ -19,7 +19,7 @@ export type Chapter =
 			pdf: string;
 			doi?: string;
 	  }
-	| { type: 'audio'; title: string; subtitle?: string; description?: string; src: string }
+	| { type: 'audio'; title: string; subtitle?: string; description?: string; src: string; cover?: ImageMetadata }
 	| { type: 'video-track'; title: string; description?: string; role?: string; youtubeId?: string; cover: ImageMetadata };
 
 interface Panel {
@@ -121,6 +121,7 @@ const { panels } = Astro.props;
 									subtitle={ch.subtitle}
 									description={ch.description}
 									src={ch.src}
+									cover={ch.cover}
 									index={index}
 									total={chTotal}
 								/>
@@ -574,6 +575,10 @@ const { panels } = Astro.props;
 			if (index === current) return;
 			const leaving = chapters[current];
 			if (leaving?.hasAttribute('data-video-chapter')) stopChapterVideo(leaving);
+			// audio is a plain same-origin <audio> element, so pausing it directly
+			// is enough — its own script reacts to the native 'pause' event to
+			// keep its play/pause icon and progress bar in sync
+			leaving?.querySelector('audio')?.pause();
 			current = index;
 			const target = chapters[current];
 			if (isMobileAxis()) {
@@ -584,6 +589,12 @@ const { panels } = Astro.props;
 			updateDots();
 			playCurrentIfVideo();
 		}
+
+		// audio chapters dispatch this for their own prev/next-track buttons,
+		// reusing the same panel-level paging the wheel/dots already drive
+		chaptersEl.addEventListener('chapter-step', ((e: CustomEvent<{ dir: number }>) => {
+			goTo(current + e.detail.dir);
+		}) as EventListener);
 
 		chaptersEl.addEventListener(
 			'wheel',
@@ -639,6 +650,7 @@ const { panels } = Astro.props;
 			reset() {
 				const playing = chapters[current];
 				if (playing?.hasAttribute('data-video-chapter')) stopChapterVideo(playing);
+				playing?.querySelector('audio')?.pause();
 				current = 0;
 				chaptersEl!.scrollTop = 0;
 				chaptersEl!.scrollLeft = 0;
