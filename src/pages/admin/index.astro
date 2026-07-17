@@ -1,0 +1,396 @@
+---
+// Not linked from any nav — reachable only by typing the URL directly.
+// All writes go through the GitHub Contents API using a token the user
+// pastes in and keeps in their own browser (localStorage); nothing here
+// ever touches the build or ships a credential in the deployed bundle.
+---
+
+<html lang="ko">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<meta name="robots" content="noindex, nofollow" />
+		<title>Oozan Admin</title>
+	</head>
+	<body>
+		<div id="admin-app">
+			<header class="topbar">
+				<h1>Oozan Admin</h1>
+				<div id="auth-status-row" hidden>
+					<span id="auth-status"></span>
+					<button id="logout-btn" type="button">로그아웃</button>
+				</div>
+			</header>
+
+			<section id="auth-gate">
+				<h2>GitHub 토큰 필요</h2>
+				<ol>
+					<li>GitHub → Settings → Developer settings → Personal access tokens → <strong>Fine-grained tokens</strong> → Generate new token</li>
+					<li>Repository access: <strong>Only select repositories</strong> → <code>oozan</code></li>
+					<li>Permissions → Repository permissions → <strong>Contents: Read and write</strong></li>
+					<li>생성된 토큰을 아래에 붙여넣기 (이 브라우저에만 저장되고, 사이트에는 절대 포함되지 않습니다)</li>
+				</ol>
+				<form id="token-form">
+					<input type="password" id="token-input" placeholder="github_pat_..." autocomplete="off" />
+					<button type="submit">확인</button>
+				</form>
+				<p id="auth-error" class="error" hidden></p>
+			</section>
+
+			<div id="admin-content" hidden>
+				<section class="panel">
+					<div class="panel-head">
+						<h2>필모 <span id="films-count" class="count"></span></h2>
+						<button id="film-add-toggle" type="button">+ 새 필모</button>
+					</div>
+					<form id="film-form" class="item-form" hidden>
+						<input type="hidden" id="film-editing-slug" />
+						<label>제목 <input type="text" id="film-title" required /></label>
+						<label>한 줄 소개 <input type="text" id="film-description" /></label>
+						<label>참여 역할 (예: 연출 · 촬영 · 편집) <input type="text" id="film-role" /></label>
+						<label>유튜브 링크 또는 ID <input type="text" id="film-youtube" required /></label>
+						<label id="film-slug-row">URL slug (영문 소문자-하이픈, 생성 후 변경 불가) <input type="text" id="film-slug" required /></label>
+						<label>커버 이미지 <input type="file" id="film-cover" accept="image/*" /></label>
+						<div class="form-actions">
+							<button type="submit" id="film-submit">추가</button>
+							<button type="button" id="film-cancel">취소</button>
+						</div>
+						<p class="form-error" id="film-error" hidden></p>
+					</form>
+					<div id="films-list" class="item-list"></div>
+				</section>
+
+				<section class="panel">
+					<div class="panel-head">
+						<h2>스냅 <span id="people-count" class="count"></span></h2>
+						<button id="person-add-toggle" type="button">+ 새 인물</button>
+					</div>
+					<form id="person-form" class="item-form" hidden>
+						<input type="hidden" id="person-editing-slug" />
+						<label>이름 <input type="text" id="person-name" required /></label>
+						<label>영문 이름 (선택) <input type="text" id="person-name-en" /></label>
+						<label id="person-slug-row">URL slug (영문 소문자-하이픈, 생성 후 변경 불가) <input type="text" id="person-slug" required /></label>
+						<div class="form-actions">
+							<button type="submit" id="person-submit">추가</button>
+							<button type="button" id="person-cancel">취소</button>
+						</div>
+						<p class="form-error" id="person-error" hidden></p>
+					</form>
+					<div id="people-list" class="item-list"></div>
+				</section>
+			</div>
+
+			<div id="toast" class="toast" hidden></div>
+		</div>
+
+		<style>
+			* {
+				box-sizing: border-box;
+			}
+
+			:root {
+				color-scheme: dark;
+			}
+
+			body {
+				margin: 0;
+				min-height: 100vh;
+				background: #0a0a0a;
+				color: #f2f2f2;
+				font-family:
+					-apple-system,
+					BlinkMacSystemFont,
+					'Segoe UI',
+					sans-serif;
+			}
+
+			#admin-app {
+				max-width: 900px;
+				margin: 0 auto;
+				padding: 2rem 1.5rem 6rem;
+			}
+
+			.topbar {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 2rem;
+			}
+
+			.topbar h1 {
+				font-size: 1.25rem;
+				font-weight: 800;
+			}
+
+			#auth-status-row {
+				display: flex;
+				align-items: center;
+				gap: 0.75rem;
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.6);
+			}
+
+			#auth-gate {
+				max-width: 560px;
+				background: #141416;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				border-radius: 8px;
+				padding: 1.75rem;
+			}
+
+			#auth-gate ol {
+				font-size: 0.85rem;
+				line-height: 1.7;
+				color: rgba(255, 255, 255, 0.75);
+				padding-left: 1.25rem;
+			}
+
+			#auth-gate code {
+				background: rgba(255, 255, 255, 0.1);
+				padding: 0.1rem 0.4rem;
+				border-radius: 3px;
+			}
+
+			#token-form {
+				display: flex;
+				gap: 0.5rem;
+				margin-top: 1.25rem;
+			}
+
+			input[type='password'],
+			input[type='text'],
+			input[type='file'] {
+				background: #1c1c1f;
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				border-radius: 6px;
+				color: #f2f2f2;
+				padding: 0.6rem 0.75rem;
+				font-size: 0.9rem;
+				width: 100%;
+			}
+
+			#token-form input {
+				flex: 1;
+			}
+
+			button {
+				background: #2a2a2e;
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				color: #f2f2f2;
+				border-radius: 6px;
+				padding: 0.55rem 1rem;
+				font-size: 0.85rem;
+				cursor: pointer;
+			}
+
+			button:hover {
+				background: #35353a;
+			}
+
+			button.primary {
+				background: #fff;
+				color: #0a0a0a;
+				border-color: #fff;
+				font-weight: 700;
+			}
+
+			button.primary:hover {
+				background: #e4e4e4;
+			}
+
+			button.danger {
+				color: #ff8a8a;
+			}
+
+			.error,
+			.form-error {
+				color: #ff8a8a;
+				font-size: 0.82rem;
+				margin-top: 0.75rem;
+			}
+
+			.panel {
+				margin-top: 2.5rem;
+			}
+
+			.panel-head {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				margin-bottom: 1rem;
+			}
+
+			.panel-head h2 {
+				font-size: 1.05rem;
+				font-weight: 800;
+			}
+
+			.count {
+				color: rgba(255, 255, 255, 0.45);
+				font-weight: 400;
+				font-size: 0.85rem;
+			}
+
+			.item-form {
+				background: #141416;
+				border: 1px solid rgba(255, 255, 255, 0.1);
+				border-radius: 8px;
+				padding: 1.25rem;
+				margin-bottom: 1.25rem;
+				display: flex;
+				flex-direction: column;
+				gap: 0.85rem;
+			}
+
+			.item-form label {
+				display: flex;
+				flex-direction: column;
+				gap: 0.35rem;
+				font-size: 0.8rem;
+				color: rgba(255, 255, 255, 0.7);
+			}
+
+			.form-actions {
+				display: flex;
+				gap: 0.5rem;
+				margin-top: 0.25rem;
+			}
+
+			.item-list {
+				display: flex;
+				flex-direction: column;
+				gap: 0.5rem;
+			}
+
+			.item-row {
+				display: flex;
+				align-items: center;
+				gap: 0.85rem;
+				background: #141416;
+				border: 1px solid rgba(255, 255, 255, 0.08);
+				border-radius: 8px;
+				padding: 0.6rem 0.85rem;
+			}
+
+			.item-thumb {
+				width: 52px;
+				height: 52px;
+				border-radius: 6px;
+				object-fit: cover;
+				background: #1c1c1f;
+				flex-shrink: 0;
+			}
+
+			.item-main {
+				flex: 1;
+				min-width: 0;
+			}
+
+			.item-title {
+				font-weight: 700;
+				font-size: 0.92rem;
+				white-space: nowrap;
+				overflow: hidden;
+				text-overflow: ellipsis;
+			}
+
+			.item-sub {
+				font-size: 0.75rem;
+				color: rgba(255, 255, 255, 0.5);
+				margin-top: 0.15rem;
+			}
+
+			.item-actions {
+				display: flex;
+				gap: 0.35rem;
+				flex-shrink: 0;
+			}
+
+			.item-actions button {
+				padding: 0.4rem 0.6rem;
+				font-size: 0.78rem;
+			}
+
+			.photo-panel {
+				background: #0f0f11;
+				border-radius: 6px;
+				padding: 0.85rem;
+				margin: 0.5rem 0 0.75rem;
+				display: none;
+			}
+
+			.photo-panel.open {
+				display: block;
+			}
+
+			.photo-grid {
+				display: grid;
+				grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+				gap: 0.5rem;
+				margin-bottom: 0.75rem;
+			}
+
+			.photo-cell {
+				position: relative;
+				aspect-ratio: 1;
+				border-radius: 6px;
+				overflow: hidden;
+				background: #1c1c1f;
+			}
+
+			.photo-cell img {
+				width: 100%;
+				height: 100%;
+				object-fit: cover;
+			}
+
+			.photo-cell-actions {
+				position: absolute;
+				inset: 0;
+				display: flex;
+				align-items: center;
+				justify-content: center;
+				gap: 0.25rem;
+				background: rgba(0, 0, 0, 0.45);
+				opacity: 0;
+				transition: opacity 0.15s ease;
+			}
+
+			.photo-cell:hover .photo-cell-actions {
+				opacity: 1;
+			}
+
+			.photo-cell-actions button {
+				padding: 0.25rem 0.4rem;
+				font-size: 0.7rem;
+			}
+
+			.toast {
+				position: fixed;
+				bottom: 1.5rem;
+				left: 50%;
+				transform: translateX(-50%);
+				background: #1c1c1f;
+				border: 1px solid rgba(255, 255, 255, 0.15);
+				border-radius: 999px;
+				padding: 0.6rem 1.25rem;
+				font-size: 0.85rem;
+				z-index: 20;
+			}
+
+			.toast.error {
+				border-color: rgba(255, 138, 138, 0.5);
+				color: #ff8a8a;
+			}
+
+			[hidden] {
+				display: none !important;
+			}
+		</style>
+
+		<script>
+			import { runAdmin } from '../../lib/admin/app';
+			runAdmin();
+		</script>
+	</body>
+</html>
