@@ -32,11 +32,11 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 			sizes="(max-width: 900px) 100vw, 60vw"
 			loading="lazy"
 		/>
-		<div class="chapter__scrim" aria-hidden="true"></div>
 		{
 			!isPlaceholder && (
 				<div class="chapter__progress" data-progress role="slider" aria-label="재생 위치">
 					<div class="chapter__progress-fill" data-progress-fill />
+					<div class="chapter__progress-time" data-progress-time aria-hidden="true" />
 				</div>
 			)
 		}
@@ -44,22 +44,37 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 	{isPlaceholder && <span class="chapter__badge">영상 업로드 예정</span>}
 	{
 		!isPlaceholder && (
-			<button class="chapter__mute" type="button" data-mute-toggle data-muted="true" aria-label="음소거 해제">
-				<svg class="chapter__mute-icon chapter__mute-icon--off" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-					<path d="M4 9v6h4l5 5V4L8 9H4Z" />
-					<path d="M16.5 12 19 9.5m0 5L16.5 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" />
+			<button class="chapter__fullscreen" type="button" data-fullscreen-toggle data-fullscreen="false" aria-label="전체화면">
+				<svg class="chapter__fullscreen-icon chapter__fullscreen-icon--enter" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3" />
 				</svg>
-				<svg class="chapter__mute-icon chapter__mute-icon--on" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-					<path d="M4 9v6h4l5 5V4L8 9H4Z" />
-					<path
-						d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"
-						stroke="currentColor"
-						stroke-width="1.6"
-						stroke-linecap="round"
-						fill="none"
-					/>
+				<svg class="chapter__fullscreen-icon chapter__fullscreen-icon--exit" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+					<path d="M9 3v3a2 2 0 0 1-2 2H4M15 3v3a2 2 0 0 0 2 2h3M4 15h3a2 2 0 0 1 2 2v3M20 15h-3a2 2 0 0 0-2 2v3" />
 				</svg>
 			</button>
+		)
+	}
+	{
+		!isPlaceholder && (
+			<div class="chapter__volume" data-video-volume>
+				<button class="chapter__mute" type="button" data-mute-toggle data-muted="true" aria-label="음소거 해제">
+					<svg class="chapter__mute-icon chapter__mute-icon--off" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+						<path d="M4 9v6h4l5 5V4L8 9H4Z" />
+						<path d="M16.5 12 19 9.5m0 5L16.5 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" fill="none" />
+					</svg>
+					<svg class="chapter__mute-icon chapter__mute-icon--on" viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+						<path d="M4 9v6h4l5 5V4L8 9H4Z" />
+						<path
+							d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12"
+							stroke="currentColor"
+							stroke-width="1.6"
+							stroke-linecap="round"
+							fill="none"
+						/>
+					</svg>
+				</button>
+				<input class="chapter__volume-slider" type="range" min="0" max="100" value="100" data-volume-slider aria-label="볼륨" />
+			</div>
 		)
 	}
 	<div class="chapter__body">
@@ -117,17 +132,6 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		border: 0;
 	}
 
-	.chapter__scrim {
-		position: absolute;
-		left: 0;
-		right: 0;
-		bottom: 0;
-		height: 40%;
-		z-index: 4;
-		background: linear-gradient(0deg, rgba(0, 0, 0, 0.9) 0%, rgba(0, 0, 0, 0) 100%);
-		pointer-events: none;
-	}
-
 	/* a thin, always-clickable seek strip at the base of the video — the only
 	   part of the video frame anything sits on top of, since a timeline is
 	   expected to intercept clicks in its own narrow track */
@@ -153,6 +157,28 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		background: #fff;
 	}
 
+	.chapter__progress-time {
+		position: absolute;
+		bottom: 100%;
+		left: 0;
+		margin-bottom: 0.6rem;
+		transform: translateX(-50%);
+		padding: 0.3rem 0.55rem;
+		font-size: 0.72rem;
+		font-variant-numeric: tabular-nums;
+		color: #fff;
+		background: rgba(20, 20, 22, 0.85);
+		border-radius: 4px;
+		white-space: nowrap;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.15s ease;
+	}
+
+	.chapter__progress:hover .chapter__progress-time {
+		opacity: 1;
+	}
+
 	.chapter__badge {
 		position: absolute;
 		top: 1.5rem;
@@ -168,10 +194,10 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		color: #fff;
 	}
 
-	.chapter__mute {
+	.chapter__fullscreen {
 		position: absolute;
 		top: 1.5rem;
-		right: 1.5rem;
+		left: 1.5rem;
 		z-index: 6;
 		width: 2.5rem;
 		height: 2.5rem;
@@ -183,6 +209,49 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		background: rgba(255, 255, 255, 0.14);
 		backdrop-filter: blur(16px) saturate(180%);
 		-webkit-backdrop-filter: blur(16px) saturate(180%);
+		color: #fff;
+		cursor: pointer;
+	}
+
+	.chapter__fullscreen-icon--exit {
+		display: none;
+	}
+
+	.chapter__fullscreen[data-fullscreen='true'] .chapter__fullscreen-icon--enter {
+		display: none;
+	}
+
+	.chapter__fullscreen[data-fullscreen='true'] .chapter__fullscreen-icon--exit {
+		display: block;
+	}
+
+	.chapter__volume {
+		position: absolute;
+		top: 1.5rem;
+		right: 1.5rem;
+		z-index: 6;
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		height: 2.5rem;
+		padding: 0 0.85rem 0 0.25rem;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.14);
+		backdrop-filter: blur(16px) saturate(180%);
+		-webkit-backdrop-filter: blur(16px) saturate(180%);
+		color: #fff;
+	}
+
+	.chapter__mute {
+		flex-shrink: 0;
+		width: 2rem;
+		height: 2rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border: 0;
+		border-radius: 999px;
+		background: none;
 		color: #fff;
 		cursor: pointer;
 	}
@@ -199,6 +268,38 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 		display: block;
 	}
 
+	.chapter__volume-slider {
+		-webkit-appearance: none;
+		appearance: none;
+		width: 64px;
+		height: 3px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.35);
+		cursor: pointer;
+	}
+
+	.chapter__volume-slider::-webkit-slider-thumb {
+		-webkit-appearance: none;
+		width: 11px;
+		height: 11px;
+		border-radius: 50%;
+		background: #fff;
+	}
+
+	.chapter__volume-slider::-moz-range-thumb {
+		width: 11px;
+		height: 11px;
+		border: 0;
+		border-radius: 50%;
+		background: #fff;
+	}
+
+	.chapter__volume-slider::-moz-range-track {
+		height: 3px;
+		border-radius: 999px;
+		background: rgba(255, 255, 255, 0.35);
+	}
+
 	.chapter__body {
 		position: relative;
 		flex: 0 0 auto;
@@ -212,7 +313,8 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 	}
 
 	.chapter__main {
-		max-width: 560px;
+		max-width: 720px;
+		min-width: 0;
 	}
 
 	.chapter__index {
@@ -223,11 +325,14 @@ const isPlaceholder = !youtubeId || youtubeId === 'REPLACE_ME';
 
 	.chapter__title {
 		margin-top: 0.5rem;
-		font-size: clamp(1.6rem, 3.5vw, 2.5rem);
+		font-size: clamp(1.05rem, 1.8vw, 1.5rem);
 		font-weight: 800;
 		letter-spacing: -0.02em;
-		line-height: 1.05;
+		line-height: 1.15;
 		color: #fff;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 
 	.chapter__desc {

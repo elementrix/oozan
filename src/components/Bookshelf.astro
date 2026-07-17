@@ -393,8 +393,17 @@ const { panels } = Astro.props;
 	const players = new Map<HTMLElement, any>();
 	const progressIntervals = new Map<HTMLElement, number>();
 
+	function formatTime(seconds: number): string {
+		const total = Math.max(0, Math.floor(seconds));
+		const m = Math.floor(total / 60);
+		const s = total % 60;
+		return `${m}:${String(s).padStart(2, '0')}`;
+	}
+
 	function startProgressPolling(el: HTMLElement, player: any) {
 		const fill = el.querySelector<HTMLElement>('[data-progress-fill]');
+		const slider = el.querySelector<HTMLInputElement>('[data-volume-slider]');
+		if (slider) slider.value = String(player.getVolume?.() ?? 100);
 		const interval = window.setInterval(() => {
 			if (el.dataset.playing !== 'true' || !fill) return;
 			const duration = player.getDuration?.();
@@ -444,40 +453,92 @@ const { panels } = Astro.props;
 			muteBtn.dataset.muted = 'true';
 			muteBtn.setAttribute('aria-label', '음소거 해제');
 		}
+		const slider = el.querySelector<HTMLInputElement>('[data-volume-slider]');
+		if (slider) slider.value = '100';
 	}
 
-	function initMuteToggle(chapter: HTMLElement) {
+	function initVolumeControl(chapter: HTMLElement) {
 		const btn = chapter.querySelector<HTMLButtonElement>('[data-mute-toggle]');
-		if (!btn) return;
+		const slider = chapter.querySelector<HTMLInputElement>('[data-volume-slider]');
+		if (!btn || !slider) return;
+
 		btn.addEventListener('click', (e) => {
 			e.stopPropagation();
 			const player = players.get(chapter);
 			if (!player) return;
 			const wasMuted = btn.dataset.muted !== 'false';
-			if (wasMuted) player.unMute();
-			else player.mute();
+			if (wasMuted) {
+				player.unMute();
+				if (player.getVolume() === 0) player.setVolume(100);
+				slider.value = String(player.getVolume());
+			} else {
+				player.mute();
+			}
 			btn.dataset.muted = String(!wasMuted);
 			btn.setAttribute('aria-label', wasMuted ? '음소거' : '음소거 해제');
+		});
+
+		slider.addEventListener('click', (e) => e.stopPropagation());
+		slider.addEventListener('input', () => {
+			const player = players.get(chapter);
+			if (!player) return;
+			const vol = Number(slider.value);
+			player.setVolume(vol);
+			const muted = vol === 0;
+			if (muted) player.mute();
+			else player.unMute();
+			btn.dataset.muted = String(muted);
+			btn.setAttribute('aria-label', muted ? '음소거 해제' : '음소거');
 		});
 	}
 
 	function initProgressSeek(chapter: HTMLElement) {
 		const bar = chapter.querySelector<HTMLElement>('[data-progress]');
+		const timeLabel = chapter.querySelector<HTMLElement>('[data-progress-time]');
 		if (!bar) return;
+
+		function fracFromEvent(e: MouseEvent) {
+			const rect = bar!.getBoundingClientRect();
+			return Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+		}
+
+		bar.addEventListener('mousemove', (e) => {
+			const player = players.get(chapter);
+			const duration = player?.getDuration?.();
+			if (!duration || !timeLabel) return;
+			const frac = fracFromEvent(e);
+			timeLabel.textContent = formatTime(frac * duration);
+			timeLabel.style.left = `${frac * 100}%`;
+		});
+
 		bar.addEventListener('click', (e) => {
 			e.stopPropagation();
 			const player = players.get(chapter);
 			const duration = player?.getDuration?.();
 			if (!player || !duration) return;
-			const rect = bar.getBoundingClientRect();
-			const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-			player.seekTo(frac * duration, true);
+			player.seekTo(fracFromEvent(e) * duration, true);
+		});
+	}
+
+	function initFullscreenToggle(chapter: HTMLElement) {
+		const btn = chapter.querySelector<HTMLButtonElement>('[data-fullscreen-toggle]');
+		if (!btn) return;
+		btn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			if (document.fullscreenElement === chapter) document.exitFullscreen();
+			else chapter.requestFullscreen();
+		});
+		document.addEventListener('fullscreenchange', () => {
+			const isFs = document.fullscreenElement === chapter;
+			btn.dataset.fullscreen = String(isFs);
+			btn.setAttribute('aria-label', isFs ? '전체화면 종료' : '전체화면');
 		});
 	}
 
 	document.querySelectorAll<HTMLElement>('[data-video-chapter]').forEach((chapter) => {
-		initMuteToggle(chapter);
+		initVolumeControl(chapter);
 		initProgressSeek(chapter);
+		initFullscreenToggle(chapter);
 	});
 
 	// drives paging within one panel's chapter stack: wheel/touch nudge -> snap to next/prev chapter
