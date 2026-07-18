@@ -15,10 +15,10 @@ const { name, role, email, phone, instagram, index, total } = Astro.props;
 ---
 
 <section class="chapter">
-	<p class="chapter__index">
-		{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
-	</p>
-	<div class="chapter__stage">
+	<div class="chapter__inner">
+		<p class="chapter__index">
+			{String(index).padStart(2, '0')} / {String(total).padStart(2, '0')}
+		</p>
 		<img src={withBase('/brand/oozan-logo.png')} alt="Oozan" class="chapter__logo" />
 		<h4 class="chapter__title">{name}</h4>
 		<p class="chapter__role">{role}</p>
@@ -44,60 +44,50 @@ const { name, role, email, phone, instagram, index, total } = Astro.props;
 		position: relative;
 		height: 100%;
 		width: 100%;
-		overflow: hidden;
+		overflow-y: auto;
 		background: var(--panel-color);
-		display: flex;
-		align-items: center;
-		justify-content: center;
+	}
+
+	.chapter__inner {
+		max-width: 560px;
+		padding: clamp(2rem, 5vw, 4rem) clamp(1.5rem, 3vw, 3rem);
 	}
 
 	.chapter__index {
-		position: absolute;
-		top: clamp(1.5rem, 3vw, 2.25rem);
-		left: clamp(1.5rem, 3vw, 2.25rem);
 		font-size: 0.78rem;
 		letter-spacing: 0.14em;
-		color: rgba(255, 255, 255, 0.65);
-	}
-
-	.chapter__stage {
-		width: 100%;
-		max-width: 640px;
-		padding: clamp(1.5rem, 4vw, 3rem);
-		text-align: center;
+		color: rgba(255, 255, 255, 0.75);
 	}
 
 	.chapter__logo {
-		height: clamp(2.4rem, 5vw, 3.75rem);
+		margin-top: 2rem;
+		height: 2.2rem;
 		width: auto;
 		display: block;
-		margin: 0 auto;
 		filter: invert(1);
 	}
 
 	.chapter__title {
-		margin-top: clamp(1.5rem, 4vw, 2.5rem);
-		font-size: clamp(2.75rem, 7vw, 5rem);
+		margin-top: 1.75rem;
+		font-size: clamp(1.8rem, 3.5vw, 2.5rem);
 		font-weight: 800;
 		letter-spacing: -0.02em;
-		line-height: 1.05;
 		color: #fff;
 	}
 
 	.chapter__role {
-		margin-top: 0.9rem;
-		font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+		margin-top: 0.5rem;
+		font-size: 0.9rem;
 		color: rgba(255, 255, 255, 0.8);
 	}
 
 	.chapter__contact {
-		margin-top: clamp(2rem, 5vw, 3rem);
+		margin-top: 2rem;
 		display: flex;
 		flex-direction: column;
 		gap: 0.9rem;
 		border-top: 1px solid rgba(255, 255, 255, 0.2);
 		padding-top: 1.25rem;
-		text-align: left;
 	}
 
 	.chapter__contact-item {
@@ -117,14 +107,14 @@ const { name, role, email, phone, instagram, index, total } = Astro.props;
 
 	.chapter__contact-label {
 		flex-shrink: 0;
-		font-size: 0.7rem;
+		font-size: 0.68rem;
 		text-transform: uppercase;
 		letter-spacing: 0.12em;
 		color: rgba(255, 255, 255, 0.55);
 	}
 
 	.chapter__contact-value {
-		font-size: clamp(0.95rem, 1.4vw, 1.1rem);
+		font-size: 0.92rem;
 		font-weight: 600;
 		text-align: right;
 	}
