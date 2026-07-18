@@ -49,8 +49,14 @@ const { panels } = Astro.props;
 				// navigation inside a chapter, so it keeps vertical chapter-to-chapter
 				// paging even on mobile — every other panel switches to horizontal
 				// chapter paging on small screens where a second, nested swipe axis
-				// isn't in play
-				const chapterAxis = p.chapters.some((ch) => ch.type === 'person') ? 'vertical' : 'responsive';
+				// isn't in play. the about panel pages left/right always (not just on
+				// mobile) since scrolling down into the next chapter there reads as
+				// an accidental page-scroll rather than an intentional swipe
+				const chapterAxis = p.chapters.some((ch) => ch.type === 'person')
+					? 'vertical'
+					: p.chapters.some((ch) => ch.type === 'about')
+						? 'horizontal'
+						: 'responsive';
 				return (
 				<div
 					class="shelf__panel"
@@ -322,6 +328,38 @@ const { panels } = Astro.props;
 		background: #fff;
 	}
 
+	/* the about panel pages left/right at every screen size — see the
+	   'horizontal' vs 'responsive' note where chapterAxis is computed */
+	.shelf__panel[data-chapter-axis='horizontal'] .shelf__chapters {
+		display: flex;
+		flex-direction: row;
+		overflow-x: hidden;
+	}
+
+	.shelf__panel[data-chapter-axis='horizontal'] .shelf__chapters > :global(.chapter) {
+		flex: 0 0 100%;
+		height: 100%;
+	}
+
+	.shelf__panel[data-chapter-axis='horizontal'] .shelf__dots {
+		top: clamp(1rem, 3vw, 1.5rem);
+		left: 50%;
+		right: auto;
+		bottom: auto;
+		transform: translateX(-50%);
+		flex-direction: row;
+	}
+
+	.shelf__panel[data-chapter-axis='horizontal'] .shelf__dot {
+		width: 14px;
+		height: 4px;
+	}
+
+	.shelf__panel[data-chapter-axis='horizontal'] .shelf__dot[aria-current='true'] {
+		width: 26px;
+		height: 4px;
+	}
+
 	@media (max-width: 720px) {
 		/* on mobile, panels stack like books lying flat at the bottom instead of
 		   standing as spines along the side — the active panel gets the full
@@ -566,14 +604,18 @@ const { panels } = Astro.props;
 			el.classList.contains('chapter'),
 		) as HTMLElement[];
 		const dots = Array.from(panel.querySelectorAll<HTMLButtonElement>('.shelf__dot'));
-		// panels without a nested horizontal swipe (see the 'responsive' attribute
-		// set in the template) page left/right on mobile instead of up/down
-		const isResponsiveAxis = panel.dataset.chapterAxis === 'responsive';
+		// chapterAxis is computed once in the template: 'vertical' always pages
+		// up/down (snap, whose photos already use left/right internally),
+		// 'horizontal' always pages left/right (about), and 'responsive' pages
+		// left/right only below the mobile breakpoint
+		const axisMode = panel.dataset.chapterAxis;
 		let current = 0;
 		let cooling = false;
 
-		function isMobileAxis() {
-			return isResponsiveAxis && window.matchMedia('(max-width: 720px)').matches;
+		function isHorizontalAxis() {
+			if (axisMode === 'horizontal') return true;
+			if (axisMode === 'responsive') return window.matchMedia('(max-width: 720px)').matches;
+			return false;
 		}
 
 		function updateDots() {
@@ -596,7 +638,7 @@ const { panels } = Astro.props;
 			leaving?.querySelector('audio')?.pause();
 			current = index;
 			const target = chapters[current];
-			if (isMobileAxis()) {
+			if (isHorizontalAxis()) {
 				chaptersEl!.scrollTo({ left: target.offsetLeft, behavior: 'smooth' });
 			} else {
 				chaptersEl!.scrollTo({ top: target.offsetTop, behavior: 'smooth' });
@@ -615,7 +657,7 @@ const { panels } = Astro.props;
 			'wheel',
 			(e) => {
 				if (panel.getAttribute('aria-expanded') !== 'true') return;
-				const delta = isMobileAxis() ? e.deltaX : e.deltaY;
+				const delta = isHorizontalAxis() ? e.deltaX : e.deltaY;
 				if (Math.abs(delta) < 4) return;
 				e.preventDefault();
 				if (cooling) return;
@@ -640,8 +682,8 @@ const { panels } = Astro.props;
 			'touchend',
 			(e) => {
 				if (touchStartY === null || cooling) return;
-				const mobile = isMobileAxis();
-				const delta = mobile
+				const horizontal = isHorizontalAxis();
+				const delta = horizontal
 					? (touchStartX ?? 0) - (e.changedTouches[0]?.clientX ?? touchStartX ?? 0)
 					: touchStartY - (e.changedTouches[0]?.clientY ?? touchStartY);
 				touchStartX = null;
